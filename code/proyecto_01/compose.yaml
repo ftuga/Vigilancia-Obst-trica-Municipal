@@ -431,6 +431,31 @@ services:
       - net_mlops
 
   # ─────────────────────────────────────────────────────────────
+  # frontend_mme — Next.js 14 dashboard (Fase MME-F)
+  # ─────────────────────────────────────────────────────────────
+  frontend_mme:
+    build:
+      context: ../frontend_mme
+    container_name: frontend_mme
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_MME_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=production
+      - API_PREDICT_MME_URL=http://api_predict_mme:8001
+    depends_on:
+      api_predict_mme:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
   # PROMETHEUS — métricas (scrape + rules)
   # ─────────────────────────────────────────────────────────────
   prometheus:

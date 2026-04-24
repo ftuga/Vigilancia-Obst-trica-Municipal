@@ -80,11 +80,17 @@ def compute_ci(
 def classify_risk(razon_por_1000: float) -> str:
     """Clasifica tier de riesgo según razón MME por 1.000 habitantes.
 
-    Umbrales basados en distribución histórica colombiana (boletines INS
-    2018-2022): mediana ~5, P75 ~10, cola larga.
+    Umbrales calibrados sobre la distribución observada del modelo C3
+    (panel muni × semestre 2016-2022): la razón típica es 0–2 × 1.000 hab.
+    Los umbrales de literatura internacional (5/10) están pensados para
+    razón × 100.000 nacidos vivos — distinta unidad. Para nuestra escala:
+
+    - alto:  ≥ 1.5 × 1.000 hab  (≈ percentil 90)
+    - medio: ≥ 0.8 × 1.000 hab  (≈ mediana)
+    - bajo:  < 0.8
     """
-    if razon_por_1000 >= 10.0:
+    if razon_por_1000 >= 1.5:
         return "alto"
-    if razon_por_1000 >= 5.0:
+    if razon_por_1000 >= 0.8:
         return "medio"
     return "bajo"

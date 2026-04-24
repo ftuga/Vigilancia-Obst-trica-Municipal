@@ -77,15 +77,27 @@ def _predict_one(
     razon = y_point * 1000.0 / pop_sem
 
     cod_dpto = (
-        str(row["cod_dpto"].iloc[0])
+        str(int(row["cod_dpto"].iloc[0])).zfill(2)
         if "cod_dpto" in row.columns and len(row)
         else cod_mpio[:2]
+    )
+    nom_mpio = (
+        str(row["nom_mpio"].iloc[0])
+        if "nom_mpio" in row.columns and len(row)
+        else None
+    )
+    nom_dpto = (
+        str(row["nom_dpto"].iloc[0])
+        if "nom_dpto" in row.columns and len(row)
+        else None
     )
     anio_used = int(row["ano"].max()) if len(row) and anio is None else (anio or 0)
 
     return PredictResponse(
         cod_mpio=cod_mpio,
+        nom_mpio=nom_mpio,
         departamento_cod=cod_dpto,
+        nom_dpto=nom_dpto,
         anio=anio_used,
         casos_mme_predichos=round(y_point, 4),
         ci_low=round(ci.low, 4),
@@ -125,7 +137,7 @@ async def predict_batch(
 async def ranking(
     request: Request,
     departamento: str | None = None,
-    top_n: int = 10,
+    top_n: int = 10,  # límite real ~1.122 (todos los muni del panel)
     anio: int | None = None,
 ) -> list[RankingItem]:
     """Top-N municipios por razón MME predicha, opcionalmente filtrados por dpto."""
@@ -152,19 +164,22 @@ async def ranking(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc),
         ) from exc
 
-    # Agregar log_pop_sem como 15º feature (consistente con training)
-    pop_sem_by_muni = {}
-    for _, r in df.iterrows():
+    # Agregar log_pop_sem como 15º feature (consistente con training).
+    # Importante: castear cod_mpio a int siempre — iterrows() upcastea Series
+    # a float64 cuando hay otras cols float, lo que rompe el zfill.
+    pop_sem_by_muni: dict[str, float] = {}
+    cod_anio = df[["cod_mpio", "_anio"]].to_numpy()
+    for cm_raw, anio_raw in cod_anio:
+        cm_key = str(int(cm_raw)).zfill(5)
         panel_row = snap.panel[
-            (snap.panel["cod_mpio"].astype(str).str.zfill(5) ==
-             str(r["cod_mpio"]).zfill(5))
-            & (snap.panel["ano"] == r["_anio"])
+            (snap.panel["cod_mpio"].astype(str).str.zfill(5) == cm_key)
+            & (snap.panel["ano"] == int(anio_raw))
         ]
-        pop_sem_by_muni[str(r["cod_mpio"]).zfill(5)] = (
+        pop_sem_by_muni[cm_key] = (
             max(float(panel_row["pop_sem"].mean()), 1.0) if len(panel_row) else 1.0
         )
     log_pop_col = np.array([
-        np.log(pop_sem_by_muni[str(cm).zfill(5)]) for cm in df["cod_mpio"]
+        np.log(pop_sem_by_muni[str(int(cm)).zfill(5)]) for cm in df["cod_mpio"]
     ])
     x_base = df[bundle.feature_names].to_numpy(dtype=float)
     x = np.column_stack([x_base, log_pop_col])
@@ -193,10 +208,19 @@ async def ranking(
         ]
         pop = max(float(pop_row["pop_sem"].mean()), 1.0) if len(pop_row) else 1.0
         razon = y_point * 1000.0 / pop
+        row_i = df.iloc[i]
+        nom_mpio = (
+            str(row_i["nom_mpio"]) if "nom_mpio" in df.columns else None
+        )
+        nom_dpto = (
+            str(row_i["nom_dpto"]) if "nom_dpto" in df.columns else None
+        )
         items.append(
             RankingItem(
-                cod_mpio=str(cod_mpio),
-                departamento_cod=str(df.iloc[i]["cod_dpto"]),
+                cod_mpio=str(int(cod_mpio)).zfill(5),
+                nom_mpio=nom_mpio,
+                departamento_cod=str(int(row_i["cod_dpto"])).zfill(2),
+                nom_dpto=nom_dpto,
                 casos_mme_predichos=round(y_point, 4),
                 ci_low=round(ci.low, 4),
                 ci_high=round(ci.high, 4),

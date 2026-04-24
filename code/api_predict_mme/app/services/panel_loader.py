@@ -126,11 +126,26 @@ def filter_departamento(
     if df.empty:
         msg = f"sin datos para departamento={departamento_cod} anio={anio}"
         raise KeyError(msg)
-    # Agregado por muni (promedio de semestres) para una fila por muni
+    # Agregado por muni: nombres se preservan vía first(), métricas vía mean.
+    # groupby.mean(numeric_only=True) ignora cols de texto, por eso necesitamos
+    # un merge con los nombres después.
     keys = ["cod_mpio", "cod_dpto"]
-    df = df.groupby(keys, as_index=False).mean(numeric_only=True)
-    features = select_features(df, feature_names)
-    features.insert(0, "cod_mpio", df["cod_mpio"].to_numpy())
-    features.insert(1, "cod_dpto", df["cod_dpto"].to_numpy())
+    nombres = (
+        df[["cod_mpio", "cod_dpto", "nom_mpio", "nom_dpto"]]
+        .drop_duplicates(subset=keys)
+        if {"nom_mpio", "nom_dpto"}.issubset(df.columns)
+        else None
+    )
+    df_grp = df.groupby(keys, as_index=False).mean(numeric_only=True)
+    features = select_features(df_grp, feature_names)
+    # cod_mpio/cod_dpto vuelven a int — groupby.mean los convierte a float
+    features.insert(0, "cod_mpio", df_grp["cod_mpio"].astype(int).to_numpy())
+    features.insert(1, "cod_dpto", df_grp["cod_dpto"].astype(int).to_numpy())
+    if nombres is not None:
+        nombres = nombres.assign(
+            cod_mpio=nombres["cod_mpio"].astype(int),
+            cod_dpto=nombres["cod_dpto"].astype(int),
+        )
+        features = features.merge(nombres, on=keys, how="left")
     features["_anio"] = anio
     return features

@@ -34,7 +34,9 @@ class PredictResponse(BaseModel):
     """Respuesta de predicción con intervalo bootstrap."""
 
     cod_mpio: str
+    nom_mpio: str | None = None
     departamento_cod: str
+    nom_dpto: str | None = None
     anio: int
     casos_mme_predichos: float = Field(
         ..., description="Casos MME esperados (escala count) semestre.",
@@ -58,7 +60,9 @@ class RankingItem(BaseModel):
     """Item del ranking top-N de municipios."""
 
     cod_mpio: str
+    nom_mpio: str | None = None
     departamento_cod: str
+    nom_dpto: str | None = None
     casos_mme_predichos: float
     razon_mme_por_1000: float
     ci_low: float
