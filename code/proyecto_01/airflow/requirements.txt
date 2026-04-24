@@ -1,0 +1,29 @@
+apache-airflow-providers-postgres>=5.10,<6
+# Pin celery <5.5: bug conocido AttributeError: 'NoneType'.split (nodesplit)
+# cuando Airflow invoca el pidfile sin hostname expansion.
+# Ref: github.com/apache/airflow/issues/42737
+celery>=5.4,<5.5
+joblib
+mlflow>=2.18,<3.0
+scikit-learn>=1.5,<1.9
+numpy>=1.26,<2.3
+scipy>=1.11
+prometheus-client>=0.20
+pandas>=2.2
+pyarrow>=14.0
+duckdb>=1.0
+evidently>=0.6,<1.0
+lightgbm>=4.3,<5
+xgboost>=2.0,<3
+matplotlib>=3.8,<4
+# MME scripts
+openpyxl>=3.1
+xlrd>=2.0
+boto3>=1.28
+requests>=2.31
+shap>=0.44,<1
+statsmodels>=0.14
+optuna>=4.0
+pydantic>=2.0
+pydantic-settings>=2.0
+typer>=0.15

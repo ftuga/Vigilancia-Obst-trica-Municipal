@@ -1,0 +1,21 @@
+{
+  "n_obs": 15694,
+  "mean": 11.166815343443353,
+  "var": 7935.4858393825825,
+  "dispersion_ratio": 710.6310613474897,
+  "pct_zeros": 26.914744488339494,
+  "poisson_expected_zeros": 0.001413558270442125,
+  "razon_p99": 1.6560260611028337,
+  "n_razon_extreme_gt20": 0,
+  "n_outliers_iqr": 1962,
+  "decision": [
+    "✓ **NegBin preferido**: dispersion ratio = 710.63 > 1.5 (Poisson asume = 1). Confirma sobredispersión.",
+    "ℹ **%zeros moderado** = 26.9%. Poisson/NegBin manejan si dispersion lo permite; ZIP opcional."
+  ],
+  "recommendation": {
+    "primary_family": "negbin",
+    "challenger": "lightgbm_poisson",
+    "require_clayton_kaldor": true,
+    "require_zip": false
+  }
+}

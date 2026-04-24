@@ -1,0 +1,318 @@
+{
+  "generated_at_utc": "2026-04-23T18:09:40.423871+00:00",
+  "volumen_anual": [
+    {
+      "ano": 2016,
+      "casos_mme": 20365.0,
+      "casos_mm_reportados": 479.0
+    },
+    {
+      "ano": 2017,
+      "casos_mme": 22858.0,
+      "casos_mm_reportados": 492.0
+    },
+    {
+      "ano": 2018,
+      "casos_mme": 22456.0,
+      "casos_mm_reportados": 513.0
+    },
+    {
+      "ano": 2019,
+      "casos_mme": 22957.0,
+      "casos_mm_reportados": 510.0
+    },
+    {
+      "ano": 2020,
+      "casos_mme": 23756.0,
+      "casos_mm_reportados": 596.0
+    },
+    {
+      "ano": 2021,
+      "casos_mme": 29637.0,
+      "casos_mm_reportados": 635.0
+    },
+    {
+      "ano": 2022,
+      "casos_mme": 33223.0,
+      "casos_mm_reportados": 473.0
+    }
+  ],
+  "top_dpto_volumen": [
+    {
+      "cod_dpto": 11,
+      "nom_dpto": "BOGOTÁ, D.C.",
+      "mme_total": 38070.0,
+      "mm_total": 359.0,
+      "n_muni": 1,
+      "nbi_avg": 3.4711883561739643,
+      "rural_avg": 0.33999999999999997
+    },
+    {
+      "cod_dpto": 5,
+      "nom_dpto": "ANTIOQUIA",
+      "mme_total": 15499.0,
+      "mm_total": 359.0,
+      "n_muni": 125,
+      "nbi_avg": 18.459065376431152,
+      "rural_avg": 51.85104800000001
+    },
+    {
+      "cod_dpto": 76,
+      "nom_dpto": "VALLE DEL CAUCA",
+      "mme_total": 12801.0,
+      "mm_total": 251.0,
+      "n_muni": 42,
+      "nbi_avg": 9.297738188506111,
+      "rural_avg": 37.103380952380945
+    },
+    {
+      "cod_dpto": 13,
+      "nom_dpto": "BOLÍVAR",
+      "mme_total": 12365.0,
+      "mm_total": 199.0,
+      "n_muni": 46,
+      "nbi_avg": 43.488768039900336,
+      "rural_avg": 45.329456521739125
+    },
+    {
+      "cod_dpto": 8,
+      "nom_dpto": "ATLÁNTICO",
+      "mme_total": 12001.0,
+      "mm_total": 229.0,
+      "n_muni": 23,
+      "nbi_avg": 18.98920950582866,
+      "rural_avg": 19.646739130434785
+    },
+    {
+      "cod_dpto": 25,
+      "nom_dpto": "CUNDINAMARCA",
+      "mme_total": 8738.0,
+      "mm_total": 160.0,
+      "n_muni": 116,
+      "nbi_avg": 10.612117996574982,
+      "rural_avg": 60.05367241379311
+    },
+    {
+      "cod_dpto": 47,
+      "nom_dpto": "MAGDALENA",
+      "mme_total": 6496.0,
+      "mm_total": 183.0,
+      "n_muni": 30,
+      "nbi_avg": 36.18554559665396,
+      "rural_avg": 47.55159999999999
+    },
+    {
+      "cod_dpto": 44,
+      "nom_dpto": "LA GUAJIRA",
+      "mme_total": 6261.0,
+      "mm_total": 230.0,
+      "n_muni": 15,
+      "nbi_avg": 39.749124232333834,
+      "rural_avg": 44.215133333333334
+    },
+    {
+      "cod_dpto": 41,
+      "nom_dpto": "HUILA",
+      "mme_total": 6178.0,
+      "mm_total": 76.0,
+      "n_muni": 37,
+      "nbi_avg": 15.883325031138673,
+      "rural_avg": 56.57632432432431
+    },
+    {
+      "cod_dpto": 19,
+      "nom_dpto": "CAUCA",
+      "mme_total": 6022.0,
+      "mm_total": 104.0,
+      "n_muni": 42,
+      "nbi_avg": 22.453759442477434,
+      "rural_avg": 76.38442857142854
+    }
+  ],
+  "top_dpto_razon": [
+    {
+      "cod_dpto": 44,
+      "nom_dpto": "LA GUAJIRA",
+      "mme_total": 6261.0,
+      "pob_dpto_aprox": 440280.0,
+      "razon_por_1000_hab": 14.220496047969474,
+      "nbi_avg": 39.749124232333834
+    },
+    {
+      "cod_dpto": 13,
+      "nom_dpto": "BOLÍVAR",
+      "mme_total": 12365.0,
+      "pob_dpto_aprox": 1035055.0,
+      "razon_por_1000_hab": 11.946225079826675,
+      "nbi_avg": 43.48876803990032
+    },
+    {
+      "cod_dpto": 41,
+      "nom_dpto": "HUILA",
+      "mme_total": 6178.0,
+      "pob_dpto_aprox": 550193.0,
+      "razon_por_1000_hab": 11.228786989292848,
+      "nbi_avg": 15.883325031138675
+    },
+    {
+      "cod_dpto": 11,
+      "nom_dpto": "BOGOTÁ, D.C.",
+      "mme_total": 38070.0,
+      "pob_dpto_aprox": 3706283.0,
+      "razon_por_1000_hab": 10.271746652913444,
+      "nbi_avg": 3.471188356173964
+    },
+    {
+      "cod_dpto": 47,
+      "nom_dpto": "MAGDALENA",
+      "mme_total": 6496.0,
+      "pob_dpto_aprox": 670873.0,
+      "razon_por_1000_hab": 9.682905706445185,
+      "nbi_avg": 36.18554559665395
+    },
+    {
+      "cod_dpto": 86,
+      "nom_dpto": "PUTUMAYO",
+      "mme_total": 1651.0,
+      "pob_dpto_aprox": 174091.0,
+      "razon_por_1000_hab": 9.483545961594798,
+      "nbi_avg": 18.96835901873499
+    },
+    {
+      "cod_dpto": 8,
+      "nom_dpto": "ATLÁNTICO",
+      "mme_total": 12001.0,
+      "pob_dpto_aprox": 1267758.5,
+      "razon_por_1000_hab": 9.466313970681325,
+      "nbi_avg": 18.989209505828665
+    },
+    {
+      "cod_dpto": 19,
+      "nom_dpto": "CAUCA",
+      "mme_total": 6022.0,
+      "pob_dpto_aprox": 732244.0,
+      "razon_por_1000_hab": 8.224034611413682,
+      "nbi_avg": 22.453759442477427
+    },
+    {
+      "cod_dpto": 20,
+      "nom_dpto": "CESAR",
+      "mme_total": 4581.0,
+      "pob_dpto_aprox": 600287.0,
+      "razon_por_1000_hab": 7.631349671074003,
+      "nbi_avg": 27.038963702126424
+    },
+    {
+      "cod_dpto": 70,
+      "nom_dpto": "SUCRE",
+      "mme_total": 3390.0,
+      "pob_dpto_aprox": 452431.5,
+      "razon_por_1000_hab": 7.492846983466006,
+      "nbi_avg": 35.54474643083193
+    }
+  ],
+  "corr_estructura": {
+    "nbi_razon": 0.12311119779019788,
+    "rural_razon": -0.22187839121201886,
+    "capacidad_razon": 0.23133008506062427,
+    "nbi_casos_abs": -0.05654514795363519
+  },
+  "silentes_sospechosos": [
+    {
+      "cod_mpio": 94884,
+      "nom_mpio": "PUERTO COLOMBIA",
+      "nom_dpto": "GUAINÍA",
+      "nbi": 95.96375617792421,
+      "pob": 1874,
+      "casos_mme_7y": 2.0
+    },
+    {
+      "cod_mpio": 97511,
+      "nom_mpio": "PACOA",
+      "nom_dpto": "VAUPÉS",
+      "nbi": 93.64746945898779,
+      "pob": 4042,
+      "casos_mme_7y": 4.0
+    },
+    {
+      "cod_mpio": 94887,
+      "nom_mpio": "PANA PANA",
+      "nom_dpto": "GUAINÍA",
+      "nbi": 93.6016511867905,
+      "pob": 1899,
+      "casos_mme_7y": 3.0
+    },
+    {
+      "cod_mpio": 94883,
+      "nom_mpio": "SAN FELIPE",
+      "nom_dpto": "GUAINÍA",
+      "nbi": 88.39122486288848,
+      "pob": 1667,
+      "casos_mme_7y": 2.0
+    },
+    {
+      "cod_mpio": 91460,
+      "nom_mpio": "MIRITÍ - PARANÁ",
+      "nom_dpto": "AMAZONAS",
+      "nbi": 85.76470588235294,
+      "pob": 1850,
+      "casos_mme_7y": 2.0
+    },
+    {
+      "cod_mpio": 97666,
+      "nom_mpio": "TARAIRA",
+      "nom_dpto": "VAUPÉS",
+      "nbi": 78.93738140417457,
+      "pob": 2215,
+      "casos_mme_7y": 2.0
+    },
+    {
+      "cod_mpio": 97889,
+      "nom_mpio": "YAVARATÉ",
+      "nom_dpto": "VAUPÉS",
+      "nbi": 76.65847665847666,
+      "pob": 1048,
+      "casos_mme_7y": 1.0
+    }
+  ],
+  "efecto_covid": {
+    "mme_delta_2020_pct": 7.2,
+    "mme_delta_2021_pct": 33.7,
+    "mm_delta_2020_pct": 19.6,
+    "mm_delta_2021_pct": 27.4
+  },
+  "capacidad_vs_razon": [
+    {
+      "score": 0,
+      "n_muni": 857,
+      "mme_total": 44347.0,
+      "pob_total": 14642234.0,
+      "razon_agg": 3.028704499600266
+    },
+    {
+      "score": 1,
+      "n_muni": 208,
+      "mme_total": 36683.0,
+      "pob_total": 12057385.0,
+      "razon_agg": 3.0423678102673173
+    },
+    {
+      "score": 2,
+      "n_muni": 46,
+      "mme_total": 32662.0,
+      "pob_total": 7866148.0,
+      "razon_agg": 4.152222917748306
+    },
+    {
+      "score": 3,
+      "n_muni": 10,
+      "mme_total": 61560.0,
+      "pob_total": 13691705.0,
+      "razon_agg": 4.496152962687993
+    }
+  ],
+  "estacionalidad": {
+    "media_global": 480.36,
+    "n_picos": 1
+  }
+}

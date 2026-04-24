@@ -1,0 +1,177 @@
+{
+  "version": "v1",
+  "generated_at_utc": "2026-04-24T00:47:19.708966+00:00",
+  "n_train_obs": 11210,
+  "pipeline": {
+    "drop": [
+      "pct_cabecera_pobl",
+      "pct_contributivo_muni_bdua",
+      "pct_excepcion_muni_bdua",
+      "tiene_ips_nivel_3",
+      "tiene_ips_nivel_2_o_3",
+      "tiene_uci_adulto",
+      "tiene_uci_neonatal",
+      "tiene_camas_parto",
+      "tiene_salas_parto",
+      "tiene_salas_cirugia",
+      "n_ips_total",
+      "nbi_total_pct",
+      "nbi_miseria_pct",
+      "nbi_vivienda_pct",
+      "nbi_servicios_pct",
+      "nbi_hacinamiento_pct",
+      "nbi_inasistencia_pct",
+      "nbi_dependencia_pct",
+      "nbi_cabecera_pct",
+      "nbi_centros_rural_disperso_pct"
+    ],
+    "pca_block": {
+      "input_features": [
+        "nbi_total_pct",
+        "nbi_miseria_pct",
+        "nbi_vivienda_pct",
+        "nbi_servicios_pct",
+        "nbi_hacinamiento_pct",
+        "nbi_inasistencia_pct",
+        "nbi_dependencia_pct",
+        "nbi_cabecera_pct",
+        "nbi_centros_rural_disperso_pct"
+      ],
+      "n_components": 3,
+      "explained_variance_cumulative": 0.8672,
+      "new_feature_names": [
+        "nbi_pc1",
+        "nbi_pc2",
+        "nbi_pc3"
+      ],
+      "scaler_mean": [
+        22.890626021288845,
+        6.497998429068202,
+        8.167930189071779,
+        7.556943760243483,
+        6.169600378604302,
+        2.2117134900012396,
+        7.689799368392807,
+        16.75870853239979,
+        27.15491704401146
+      ],
+      "scaler_scale": [
+        17.711419131963694,
+        9.768873430148755,
+        11.753953924871597,
+        14.818673163248008,
+        6.57135940593859,
+        2.627166419172622,
+        4.689616302275277,
+        16.074807814444373,
+        19.01393070115526
+      ],
+      "pca_components": [
+        [
+          0.3888619094665233,
+          0.38473025176705167,
+          0.3019980843429094,
+          0.3349553422459058,
+          0.3090878415128553,
+          0.28728930946135905,
+          0.3214931558729527,
+          0.2784709584642654,
+          0.3720171493525999
+        ],
+        [
+          0.20134968756040292,
+          -0.15316348386148299,
+          0.1487682247117798,
+          0.11516009176445269,
+          -0.4337068660235787,
+          -0.5390989984398414,
+          -0.07899696664384001,
+          0.6382988255820055,
+          0.09060977805137313
+        ],
+        [
+          -0.027981998996979302,
+          0.09147758221773805,
+          0.7171735717767366,
+          -0.5157289135357088,
+          0.04074504756453333,
+          -0.29752594034968277,
+          0.04654641943429438,
+          -0.287850214430016,
+          0.18795865550819324
+        ]
+      ]
+    }
+  },
+  "features_final": [
+    "covid_window",
+    "n_ips_ese",
+    "n_ips_nivel_1",
+    "n_ips_nivel_2",
+    "nbi_pc1",
+    "nbi_pc2",
+    "nbi_pc3",
+    "omision_censal_censo2018",
+    "pct_rural_pobl",
+    "pct_subsidiado_muni_bdua",
+    "reps_salas_cirugia",
+    "reps_salas_parto",
+    "reps_uci_adulto",
+    "score_capacidad_obstetrica"
+  ],
+  "features_original": [
+    "covid_window",
+    "n_ips_ese",
+    "n_ips_nivel_1",
+    "n_ips_nivel_2",
+    "omision_censal_censo2018",
+    "pct_rural_pobl",
+    "pct_subsidiado_muni_bdua",
+    "reps_salas_cirugia",
+    "reps_salas_parto",
+    "reps_uci_adulto",
+    "score_capacidad_obstetrica"
+  ],
+  "features_pca": [
+    "nbi_pc1",
+    "nbi_pc2",
+    "nbi_pc3"
+  ],
+  "lasso_alpha": 0.0023419854662509996,
+  "lasso_retained": {
+    "n_ips_nivel_1": 0.04315407553801931,
+    "reps_salas_parto": 0.0423032623501927,
+    "omision_censal_censo2018": 0.030739514752293064,
+    "nbi_pc2": 0.026607507717139066,
+    "score_capacidad_obstetrica": 0.024208435551337074,
+    "nbi_pc1": 0.02025759312734585,
+    "pct_rural_pobl": 0.019392373743066307,
+    "pct_subsidiado_muni_bdua": 0.016646547615511178,
+    "reps_uci_adulto": 0.01641066181730822,
+    "n_ips_ese": 0.013466716198938376,
+    "covid_window": 0.012749089477721492,
+    "n_ips_nivel_2": 0.01072858229631212,
+    "reps_salas_cirugia": 0.008778155947609455,
+    "nbi_pc3": 0.007286945242905861
+  },
+  "mi_ranking": {
+    "omision_censal_censo2018": 1.263477981981505,
+    "pct_subsidiado_muni_bdua": 1.2634608044563231,
+    "nbi_pc3": 1.260718410757212,
+    "nbi_pc2": 1.2540681097532138,
+    "pct_rural_pobl": 1.2503844269986022,
+    "nbi_pc1": 1.2408401501554858,
+    "reps_salas_parto": 0.2623150027467358,
+    "n_ips_ese": 0.17032488297033188,
+    "n_ips_nivel_1": 0.16886995590766318,
+    "score_capacidad_obstetrica": 0.15974031003596245,
+    "reps_salas_cirugia": 0.15011591276202996,
+    "reps_camas_parto": 0.10136482104806577,
+    "n_ips_nivel_2": 0.07413024395526957,
+    "reps_uci_adulto": 0.027325225629881267,
+    "n_ips_nivel_3": 0.015831609030628968,
+    "reps_uci_neonatal": 0.012177673172102388,
+    "covid_window": 0.0,
+    "post_c055": 0.0
+  }
+}

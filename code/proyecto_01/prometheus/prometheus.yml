@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monorepo: ent_tesis
+    env: dev
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # ── Airflow statsd (DAGs 1-mme_etl_medallion, 2-mme_train_and_promote)
+  - job_name: airflow_statsd
+    static_configs:
+      - targets: ['statsd-exporter:9102']
+        labels:
+          service: airflow
+
+  # ── Pushgateway (métricas batch del pipeline MME: drift check, métricas modelo)
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+        labels:
+          service: batch_jobs
+
+  # ── api_predict_mme (Fase MME-F) — serving del champion C3
+  - job_name: api_predict_mme
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api_predict_mme:8001']
+        labels:
+          service: api_predict_mme

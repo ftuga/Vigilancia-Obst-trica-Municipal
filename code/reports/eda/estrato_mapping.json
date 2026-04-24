@@ -1,0 +1,10 @@
+{
+  "label_column": "estrato",
+  "values": [
+    "alto",
+    "bajo",
+    "medio"
+  ],
+  "rug_stratum": "bajo",
+  "binary_rule": "is_rugpull = (estrato == 'bajo')"
+}

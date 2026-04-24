@@ -1,0 +1,170 @@
+[
+  {
+    "run_id": "5ea8147a8a154b7f81754179ef8544c6",
+    "run_name": "logreg_binary",
+    "family": "logreg",
+    "label_mode": "binary",
+    "metrics": {
+      "accuracy": 0.8666666666666667,
+      "f1_macro": 0.866658132787165,
+      "roc_auc": 0.9346129748818135,
+      "f1_positive": 0.8655913978494624,
+      "precision_not_rug": 0.8324873096446701,
+      "recall_not_rug": 0.9060773480662984,
+      "f1_not_rug": 0.8677248677248677,
+      "precision_rug": 0.9044943820224719,
+      "recall_rug": 0.8298969072164949,
+      "f1_rug": 0.8655913978494624
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "2981b0270fe94cdbaac61a7ace28f01a",
+    "run_name": "random_forest_binary",
+    "family": "random_forest",
+    "label_mode": "binary",
+    "metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "roc_auc": 1.0,
+      "f1_positive": 1.0,
+      "precision_not_rug": 1.0,
+      "recall_not_rug": 1.0,
+      "f1_not_rug": 1.0,
+      "precision_rug": 1.0,
+      "recall_rug": 1.0,
+      "f1_rug": 1.0
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "e5e946d4d58e4bef9e77c7760e6036f7",
+    "run_name": "xgboost_binary",
+    "family": "xgboost",
+    "label_mode": "binary",
+    "metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "roc_auc": 1.0,
+      "f1_positive": 1.0,
+      "precision_not_rug": 1.0,
+      "recall_not_rug": 1.0,
+      "f1_not_rug": 1.0,
+      "precision_rug": 1.0,
+      "recall_rug": 1.0,
+      "f1_rug": 1.0
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "c01183485b694475873eaa6b409cf987",
+    "run_name": "lightgbm_binary",
+    "family": "lightgbm",
+    "label_mode": "binary",
+    "metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "roc_auc": 1.0,
+      "f1_positive": 1.0,
+      "precision_not_rug": 1.0,
+      "recall_not_rug": 1.0,
+      "f1_not_rug": 1.0,
+      "precision_rug": 1.0,
+      "recall_rug": 1.0,
+      "f1_rug": 1.0
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "d4ad1045b7c74887861cc812c2b6bfa9",
+    "run_name": "logreg_multiclass",
+    "family": "logreg",
+    "label_mode": "multiclass",
+    "metrics": {
+      "accuracy": 0.7333333333333333,
+      "f1_macro": 0.7127487691560918,
+      "roc_auc_ovr": 0.9018013040595881,
+      "precision_alto": 0.7727272727272727,
+      "recall_alto": 0.5930232558139535,
+      "f1_alto": 0.6710526315789473,
+      "precision_bajo": 0.9536423841059603,
+      "recall_bajo": 0.7422680412371134,
+      "f1_bajo": 0.8347826086956521,
+      "precision_medio": 0.5063291139240507,
+      "recall_medio": 0.8421052631578947,
+      "f1_medio": 0.6324110671936759
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "bb5f634cf12a41af93b8fb748e5ef78f",
+    "run_name": "random_forest_multiclass",
+    "family": "random_forest",
+    "label_mode": "multiclass",
+    "metrics": {
+      "accuracy": 0.9946666666666667,
+      "f1_macro": 0.9926062091503268,
+      "roc_auc_ovr": 1.0,
+      "precision_alto": 1.0,
+      "recall_alto": 0.9767441860465116,
+      "f1_alto": 0.9882352941176471,
+      "precision_bajo": 1.0,
+      "recall_bajo": 1.0,
+      "f1_bajo": 1.0,
+      "precision_medio": 0.979381443298969,
+      "recall_medio": 1.0,
+      "f1_medio": 0.9895833333333334
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "996e3b6ed65c45dfa0ba13a277582ba6",
+    "run_name": "xgboost_multiclass",
+    "family": "xgboost",
+    "label_mode": "multiclass",
+    "metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "roc_auc_ovr": 1.0,
+      "precision_alto": 1.0,
+      "recall_alto": 1.0,
+      "f1_alto": 1.0,
+      "precision_bajo": 1.0,
+      "recall_bajo": 1.0,
+      "f1_bajo": 1.0,
+      "precision_medio": 1.0,
+      "recall_medio": 1.0,
+      "f1_medio": 1.0
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  },
+  {
+    "run_id": "386f0095ea05485e894cb30f0f81327d",
+    "run_name": "lightgbm_multiclass",
+    "family": "lightgbm",
+    "label_mode": "multiclass",
+    "metrics": {
+      "accuracy": 0.9973333333333333,
+      "f1_macro": 0.9963054815631281,
+      "roc_auc_ovr": 1.0,
+      "precision_alto": 1.0,
+      "recall_alto": 0.9883720930232558,
+      "f1_alto": 0.9941520467836257,
+      "precision_bajo": 1.0,
+      "recall_bajo": 1.0,
+      "f1_bajo": 1.0,
+      "precision_medio": 0.9895833333333334,
+      "recall_medio": 1.0,
+      "f1_medio": 0.9947643979057592
+    },
+    "test_rows": 375,
+    "train_rows": 623
+  }
+]

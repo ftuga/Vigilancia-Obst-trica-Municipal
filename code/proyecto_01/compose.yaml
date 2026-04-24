@@ -1,0 +1,561 @@
+x-airflow-common:
+  &airflow-common
+  build: ./airflow
+  environment:
+    &airflow-common-env
+    # CeleryExecutor tenía bug infinito con Celery 5.4/5.5 + pidfile. Switch a LocalExecutor:
+    # tasks corren en el scheduler directo. 1 nodo, volumen chico del proyecto lo soporta.
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_AIRFLOW_USER}:${POSTGRES_AIRFLOW_PASSWORD}@postgres:5432/${POSTGRES_AIRFLOW_DB}
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_AIRFLOW_USER}:${POSTGRES_AIRFLOW_PASSWORD}@postgres:5432/${POSTGRES_AIRFLOW_DB}
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql://${POSTGRES_AIRFLOW_USER}:${POSTGRES_AIRFLOW_PASSWORD}@postgres:5432/${POSTGRES_AIRFLOW_DB}
+    # ── Métricas Airflow via StatsD (scrapeadas por statsd-exporter → Prometheus)
+    AIRFLOW__METRICS__STATSD_ON: 'true'
+    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+    AIRFLOW__METRICS__STATSD_PORT: '9125'
+    AIRFLOW__METRICS__STATSD_PREFIX: airflow
+    # ── MLflow client: workers suben artifacts directo a MinIO (boto3)
+    MLFLOW_TRACKING_URI: http://mlflow:5000
+    MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+  volumes:
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    # DAGs MME en subdir → Airflow los descubre recursivamente
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags_mme:/opt/airflow/dags/mme
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
+    # Repo montado para scripts/mme/* que los DAGs MME envuelven
+    - ..:/opt/repo:ro
+    # Medallón MME: bronze/silver/gold (escritos por 1-mme_etl_medallion)
+    - ../data/mme:/opt/airflow/data/mme
+    # Reportes de drift (Evidently HTML/JSON) — /opt/repo está RO, aquí RW
+    - ../data/mme/drift_reports:/opt/airflow/data/mme/drift_reports
+    # Reportes de promoción del Registry MME
+    - ../data/mme/promotion_reports:/opt/airflow/data/mme/promotion_reports
+  user: "${AIRFLOW_UID:-50000}:0"
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+
+services:
+  minio:
+    build: ./mlflow/minio_image
+    container_name: Minio
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MLFLOW_BUCKET_NAME=${MINIO_BUCKET}
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./minio:/data
+    networks:
+      - net_mlops
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"  
+    depends_on:
+      - postgres
+      - postgres_mlflow
+    networks:
+      - net_mlops
+
+  postgres:
+    image: postgres:13
+    container_name: postgres_airflow
+    environment:
+      POSTGRES_USER: ${POSTGRES_AIRFLOW_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_AIRFLOW_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_AIRFLOW_DB}
+    ports:
+      - "${POSTGRES_AIRFLOW_PORT}:5432"
+    command: ["postgres", "-c", "listen_addresses=*"]
+    volumes:
+      - postgres-airflow-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_AIRFLOW_USER}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - net_mlops
+
+  postgres_mlflow:
+    image: postgres:13
+    container_name: postgres_mlflow
+    environment:
+      POSTGRES_USER: ${POSTGRES_MLFLOW_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_MLFLOW_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_MLFLOW_DB}
+    ports:
+      - "${POSTGRES_MLFLOW_PORT}:5432"
+    command: ["postgres", "-c", "listen_addresses=*"]
+    volumes:
+      - postgres-mlflow-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_MLFLOW_USER}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - net_mlops
+
+  mlflow:
+    build: ./mlflow
+    container_name: mlflow
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:${MLFLOW_PORT}
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_MLFLOW_USER}:${POSTGRES_MLFLOW_PASSWORD}@postgres_mlflow/${POSTGRES_MLFLOW_DB}
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: s3://${MINIO_BUCKET}/artifacts
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+    ports:
+      - "${MLFLOW_PORT}:5000"
+    depends_on:
+      postgres_mlflow:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5000/"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+    networks:
+      - net_mlops
+
+  dev:
+    build: ./jupyterlab
+    container_name: jupyter_dev
+    ports:
+      - "${JUPYTER_PORT}:8888"
+    volumes:
+      - ./jupyterlab/notebook:/home/jovyan/work
+      - ../:/home/jovyan/repo:ro
+      - ../data/mme:/home/jovyan/data/mme:ro
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTHONPATH=/home/jovyan/repo/src
+      - MME_DATA_ROOT=/home/jovyan/data/mme
+      - MME_REPORTS_ROOT=/home/jovyan/data/mme/reports
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+    restart: always
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+    networks:
+      - net_mlops
+
+  redis:
+    image: redis:7.2-bookworm
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+    networks:
+      - net_mlops
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - net_mlops
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - net_mlops
+
+  # airflow-worker desactivado bajo LocalExecutor (no necesario).
+  # Comentado entero para no romper depends_on de otros servicios.
+  airflow-worker-disabled:
+    <<: *airflow-common
+    profiles: ["celery"]  # solo activa con --profile celery
+    command: ["celery", "worker", "--hostname", "celery@%h"]
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    environment:
+      <<: *airflow-common-env
+      DUMB_INIT_SETSID: "0"
+      # Fix Celery 5.x crash: hostname explícito (si no, nodesplit falla con None)
+      AIRFLOW__CELERY__WORKER_HOSTNAME: "celery@%h"
+      # Límite de threads LightGBM para evitar saturación del host.
+      # Prefix MME_ es obligatorio: pydantic BaseSettings lo espera así.
+      MME_LGBM_NUM_THREADS: "4"
+      # Optuna trials por default para train_c3 (override per-trigger via DAG conf).
+      OPTUNA_N_TRIALS: "50"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    # GPU reservation DESACTIVADA: host carece de nvidia-container-toolkit.
+    # Para activar: instalar toolkit (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/)
+    # + reiniciar docker + descomentar este bloque:
+    #
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    #
+    # Mientras tanto XGBoost usa CPU por fallback automático (device="cpu").
+    networks:
+      - net_mlops
+      
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - net_mlops
+      
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        if [[ -z "${AIRFLOW_UID}" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+          echo "If you are on Linux, you SHOULD follow the instructions below to set "
+          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+          echo "For other operating systems you can get rid of the warning with manually created .env file:"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
+          echo
+        fi
+        one_meg=1048576
+        mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
+        cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
+        disk_available=$$(df / | tail -1 | awk '{print $$4}')
+        warning_resources="false"
+        if (( mem_available < 4000 )) ; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
+          echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
+          echo
+          warning_resources="true"
+        fi
+        if (( cpus_available < 2 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
+          echo "At least 2 CPUs recommended. You have $${cpus_available}"
+          echo
+          warning_resources="true"
+        fi
+        if (( disk_available < one_meg * 10 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
+          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
+          echo
+          warning_resources="true"
+        fi
+        if [[ $${warning_resources} == "true" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
+          echo "Please follow the instructions to increase amount of resources available:"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
+          echo
+        fi
+        mkdir -p /sources/airflow/logs /sources/airflow/dags /sources/airflow/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/airflow/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    user: "0:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+    networks:
+      - net_mlops
+
+  airflow-cli:
+    <<: *airflow-common
+    profiles:
+      - debug
+    environment:
+      <<: *airflow-common-env
+      CONNECTION_CHECK_MAX_COUNT: "0"
+    command:
+      - bash
+      - -c
+      - airflow
+    networks:
+      - net_mlops
+
+  flower:
+    <<: *airflow-common
+    command: celery flower
+    profiles:
+      - flower
+    ports:
+      - "5555:5555"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # api_predict_mme — FastAPI serving del champion C3 (Fase MME-F)
+  # ─────────────────────────────────────────────────────────────
+  api_predict_mme:
+    build:
+      context: ..
+      dockerfile: api_predict_mme/Dockerfile
+    container_name: api_predict_mme
+    restart: unless-stopped
+    ports:
+      - "${API_PREDICT_MME_PORT:-8001}:8001"
+    volumes:
+      # mme package via PYTHONPATH + panel gold read-only
+      - ../src:/opt/repo/src:ro
+      - ../data/mme:/opt/airflow/data/mme:ro
+      - ../reports:/opt/airflow/reports:ro
+    environment:
+      - PYTHONPATH=/opt/repo/src
+      - MME_DATA_ROOT=/opt/airflow/data/mme
+      - MME_REPORTS_ROOT=/opt/airflow/data/mme/reports
+      - API_MME_MLFLOW_TRACKING_URI=http://mlflow:5000
+      - API_MME_REGISTERED_MODEL_NAME=mme_vulnerability_baseline
+      - API_MME_CHAMPION_ALIAS=champion
+      - API_MME_CI_ALPHA=0.10
+      - API_MME_N_BOOTSTRAP=200
+      - API_MME_PANEL_CACHE_TTL_SECONDS=3600
+      - API_MME_LOG_LEVEL=INFO
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8001/healthz\")'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # PROMETHEUS — métricas (scrape + rules)
+  # ─────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - cadvisor
+      - node-exporter
+      - statsd-exporter
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # GRAFANA — dashboards provisioned desde ./grafana/
+  # ─────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # NODE EXPORTER — métricas del host
+  # ─────────────────────────────────────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "${NODE_EXPORTER_PORT:-9100}:9100"
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # CADVISOR — métricas por container
+  # ─────────────────────────────────────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "${CADVISOR_PORT:-8082}:8080"
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # PUSHGATEWAY — destino para métricas batch (drift check)
+  # ─────────────────────────────────────────────────────────────
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    container_name: pushgateway
+    restart: unless-stopped
+    ports:
+      - "${PUSHGATEWAY_PORT:-9091}:9091"
+    networks:
+      - net_mlops
+
+  # ─────────────────────────────────────────────────────────────
+  # STATSD EXPORTER — traduce Airflow StatsD → Prometheus
+  # ─────────────────────────────────────────────────────────────
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.27.1
+    container_name: statsd-exporter
+    restart: unless-stopped
+    command:
+      - '--statsd.mapping-config=/tmp/statsd_mapping.yml'
+      - '--statsd.listen-udp=:9125'
+      - '--statsd.listen-tcp=:9125'
+      - '--web.listen-address=:9102'
+    volumes:
+      - ./prometheus/statsd_mapping.yml:/tmp/statsd_mapping.yml:ro
+    ports:
+      - "${STATSD_EXPORTER_PORT:-9102}:9102"
+      - "9125:9125/udp"
+    networks:
+      - net_mlops
+
+volumes:
+  postgres-airflow-volume:
+  postgres-mlflow-volume:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  net_mlops:
+    driver: bridge

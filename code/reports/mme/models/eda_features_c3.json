@@ -1,0 +1,104 @@
+{
+  "n_obs": 15694,
+  "n_features_candidates": 33,
+  "missing_nonzero": {
+    "nbi_cabecera_pct": 1.695
+  },
+  "vif_severe": [
+    "pct_rural_pobl",
+    "pct_cabecera_pobl",
+    "pct_contributivo_muni_bdua",
+    "nbi_total_pct",
+    "nbi_miseria_pct",
+    "nbi_servicios_pct",
+    "nbi_vivienda_pct",
+    "reps_salas_cirugia",
+    "n_ips_total",
+    "pct_subsidiado_muni_bdua",
+    "nbi_centros_rural_disperso_pct",
+    "n_ips_nivel_3"
+  ],
+  "vif_moderate": [
+    "reps_uci_neonatal",
+    "reps_salas_parto",
+    "nbi_hacinamiento_pct",
+    "reps_uci_adulto",
+    "nbi_dependencia_pct",
+    "nbi_cabecera_pct"
+  ],
+  "redundant_pairs_count": 13,
+  "top_redundant_pairs": [
+    {
+      "a": "pct_rural_pobl",
+      "b": "pct_cabecera_pobl",
+      "rho": -1.0
+    },
+    {
+      "a": "n_ips_nivel_3",
+      "b": "tiene_ips_nivel_3",
+      "rho": 1.0
+    },
+    {
+      "a": "reps_uci_adulto",
+      "b": "tiene_uci_adulto",
+      "rho": 1.0
+    },
+    {
+      "a": "reps_camas_parto",
+      "b": "tiene_camas_parto",
+      "rho": 0.998
+    },
+    {
+      "a": "reps_salas_cirugia",
+      "b": "tiene_salas_cirugia",
+      "rho": 0.995
+    },
+    {
+      "a": "pct_subsidiado_muni_bdua",
+      "b": "pct_contributivo_muni_bdua",
+      "rho": -0.991
+    },
+    {
+      "a": "nbi_total_pct",
+      "b": "nbi_miseria_pct",
+      "rho": 0.969
+    },
+    {
+      "a": "n_ips_nivel_2",
+      "b": "tiene_ips_nivel_2_o_3",
+      "rho": 0.949
+    },
+    {
+      "a": "nbi_miseria_pct",
+      "b": "nbi_centros_rural_disperso_pct",
+      "rho": 0.939
+    },
+    {
+      "a": "nbi_total_pct",
+      "b": "nbi_centros_rural_disperso_pct",
+      "rho": 0.938
+    },
+    {
+      "a": "nbi_miseria_pct",
+      "b": "nbi_servicios_pct",
+      "rho": 0.883
+    },
+    {
+      "a": "nbi_total_pct",
+      "b": "nbi_servicios_pct",
+      "rho": 0.878
+    },
+    {
+      "a": "nbi_total_pct",
+      "b": "nbi_cabecera_pct",
+      "rho": 0.851
+    }
+  ],
+  "skew_top5": {
+    "n_ips_nivel_3": 24.193,
+    "reps_camas_parto": 21.801,
+    "reps_salas_cirugia": 21.517,
+    "reps_uci_neonatal": 18.539,
+    "n_ips_total": 16.409
+  }
+}

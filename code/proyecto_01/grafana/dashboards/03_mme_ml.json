@@ -1,0 +1,173 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "row",
+      "title": "C3 Vulnerabilidad Municipal — salud del pipeline",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "DAG ETL medallón — última corrida",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+      "id": 1,
+      "targets": [{"expr": "time() - max(timestamp(changes(airflow_dagrun_duration_seconds_count{dag_id=\"1-mme_etl_medallion\",status=\"success\"}[14d]) > 0))", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 604800}, {"color": "red", "value": 1209600}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "DAG train+promote — última corrida",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+      "id": 2,
+      "targets": [{"expr": "time() - max(timestamp(changes(airflow_dagrun_duration_seconds_count{dag_id=\"2-mme_train_and_promote\",status=\"success\"}[14d]) > 0))", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 604800}, {"color": "red", "value": 1209600}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Fallos train+promote (7d)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+      "id": 3,
+      "targets": [{"expr": "sum(increase(airflow_dagrun_duration_seconds_count{dag_id=\"2-mme_train_and_promote\",status=\"failed\"}[7d]))", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 3}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Drift detectado (último run)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+      "id": 4,
+      "targets": [{"expr": "mme_drift_detected", "refId": "A"}],
+      "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "ESTABLE", "color": "green"}, "1": {"text": "DRIFT", "color": "red"}}}], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}}
+    },
+
+    {"type": "row", "title": "Métricas del mejor modelo (pushgateway)", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}, "id": 101, "collapsed": false},
+    {
+      "type": "stat",
+      "title": "Spearman dpto — test",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 6},
+      "id": 10,
+      "targets": [{"expr": "max(mme_model_test_spearman_dpto)", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"min": -1, "max": 1, "decimals": 3, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.3}, {"color": "yellow", "value": 0.5}, {"color": "green", "value": 0.7}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Precision @top-50 — test",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 6},
+      "id": 11,
+      "targets": [{"expr": "max(mme_model_test_precision_at_50)", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "decimals": 3, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.08}, {"color": "yellow", "value": 0.15}, {"color": "green", "value": 0.25}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "MAE razón MME — test",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 6},
+      "id": 12,
+      "targets": [{"expr": "min(mme_model_test_mae_razon)", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"decimals": 3, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1.0}, {"color": "red", "value": 2.0}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "R² log(1+y) — test",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 6},
+      "id": 13,
+      "targets": [{"expr": "max(mme_model_test_r2_log_counts)", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "decimals": 3, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 0.3}, {"color": "green", "value": 0.5}]}}}
+    },
+
+    {"type": "row", "title": "Evolución temporal de métricas", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 11}, "id": 102, "collapsed": false},
+    {
+      "type": "timeseries",
+      "title": "Spearman dpto — train/val/test",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "id": 20,
+      "targets": [
+        {"expr": "mme_model_train_spearman_dpto", "refId": "A", "legendFormat": "train — {{family}}"},
+        {"expr": "mme_model_val_spearman_dpto", "refId": "B", "legendFormat": "val — {{family}}"},
+        {"expr": "mme_model_test_spearman_dpto", "refId": "C", "legendFormat": "test — {{family}}"}
+      ],
+      "fieldConfig": {"defaults": {"min": -1, "max": 1}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Precision @top-50 por split",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "id": 21,
+      "targets": [
+        {"expr": "mme_model_val_precision_at_50", "refId": "A", "legendFormat": "val — {{family}}"},
+        {"expr": "mme_model_test_precision_at_50", "refId": "B", "legendFormat": "test — {{family}}"}
+      ],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1}}
+    },
+
+    {"type": "row", "title": "Duración de tasks críticas (DAG 2)", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20}, "id": 103, "collapsed": false},
+    {
+      "type": "timeseries",
+      "title": "Duración por task (histogram p95 — 1h)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 21},
+      "id": 30,
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum by (task_id, le) (rate(airflow_task_duration_seconds_bucket{dag_id=\"2-mme_train_and_promote\"}[1h])))",
+        "refId": "A",
+        "legendFormat": "{{task_id}}"
+      }],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+
+    {"type": "row", "title": "Drift & feature health", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 29}, "id": 104, "collapsed": false},
+    {
+      "type": "timeseries",
+      "title": "PSI por feature (pushgateway — check_drift)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+      "id": 40,
+      "targets": [{"expr": "mme_feature_psi", "refId": "A", "legendFormat": "{{feature}}"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.1}, {"color": "red", "value": 0.25}]}}}
+    },
+    {
+      "type": "timeseries",
+      "title": "KS por feature (pushgateway)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+      "id": 41,
+      "targets": [{"expr": "mme_feature_ks_stat", "refId": "A", "legendFormat": "{{feature}}"}],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1}}
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["ent-tesis", "mme", "ml", "c3"],
+  "templating": {"list": []},
+  "time": {"from": "now-7d", "to": "now"},
+  "timepicker": {},
+  "timezone": "America/Bogota",
+  "title": "03 · MME C3 — Vulnerabilidad Municipal ML",
+  "uid": "mme-c3-ml",
+  "version": 1,
+  "weekStart": ""
+}
