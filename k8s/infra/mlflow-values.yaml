@@ -1,0 +1,91 @@
+# Bitnami MLflow chart values.
+# Chart 5.1.17 · App version 3.3.2.
+# Reemplaza el manifest propio (deployment.yaml ya borrado del cluster).
+# En B9, si se decide buildear imagen custom, esto se reemplaza por
+# tracking.image.{registry,repository,tag} apuntando a luisfrontuso10/mme-mlflow.
+
+global:
+  defaultStorageClass: microk8s-hostpath
+  security:
+    allowInsecureImages: true
+
+# Bitnami movió tags free a bitnamilegacy desde 2025-08-28.
+image:
+  registry: docker.io
+  repository: bitnamilegacy/mlflow
+  tag: 3.3.2-debian-12-r0
+
+tracking:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: NodePort
+    nodePorts:
+      http: "30500"
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+  persistence:
+    enabled: false
+
+volumePermissions:
+  enabled: false
+
+waitContainer:
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/os-shell
+    tag: 12-debian-12-r51
+  auth:
+    enabled: false
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+
+run:
+  enabled: false
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  dialectDriver: postgresql
+  host: postgres-mlflow.mlflow
+  port: 5432
+  user: mlflow
+  database: mlflow
+  existingSecret: postgres-mlflow-creds
+  existingSecretPasswordKey: password
+
+minio:
+  enabled: false
+
+externalS3:
+  host: minio.data
+  port: 9000
+  protocol: http
+  bucket: mlflows3
+  useCredentialsInSecret: true
+  existingSecret: minio-creds
+  existingSecretAccessKeyIDKey: rootUser
+  existingSecretKeySecretKey: rootPassword
+  serveArtifacts: true
+
+git:
+  enabled: false
