@@ -57,10 +57,19 @@ main() {
         "postgres-password=${POSTGRES_MLFLOW_PASSWORD}" \
         "database=${POSTGRES_MLFLOW_DB}"
 
-    # Chart minio/minio espera keys camelCase rootUser/rootPassword.
-    apply_secret_literal data minio-creds \
-        "rootUser=${MINIO_ROOT_USER}" \
-        "rootPassword=${MINIO_ROOT_PASSWORD}"
+    # Chart bitnami/mlflow crea una segunda DB para auth aunque esté disabled.
+    KUBECTL_PG_EXEC="$KUBECTL exec postgres-mlflow-0 -n mlflow -- env PGPASSWORD=${POSTGRES_MLFLOW_PASSWORD} psql -U ${POSTGRES_MLFLOW_USER} -d postgres"
+    if ! $KUBECTL_PG_EXEC -tAc "SELECT 1 FROM pg_database WHERE datname='mlflow_auth'" 2>/dev/null | grep -q 1; then
+        $KUBECTL_PG_EXEC -c 'CREATE DATABASE mlflow_auth;' 2>&1 | tail -1
+    fi
+
+    # Chart minio/minio (data) y bitnami/mlflow (mlflow, apps) consumen minio-creds.
+    # Replicado en los 3 namespaces que lo referencian.
+    for ns in data mlflow apps; do
+        apply_secret_literal "$ns" minio-creds \
+            "rootUser=${MINIO_ROOT_USER}" \
+            "rootPassword=${MINIO_ROOT_PASSWORD}"
+    done
 
     apply_secret_literal airflow airflow-runtime \
         "fernet-key=${AIRFLOW_FERNET_KEY}" \
