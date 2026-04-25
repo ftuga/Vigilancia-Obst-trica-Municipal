@@ -1,0 +1,78 @@
+name: Bump K8s Image Tags
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Push to Docker Hub
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag manual (override). Si vacío, calcula desde git sha.'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bump-tags-main
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+          fetch-depth: 0
+
+      - name: Compute tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          DATE=$(date -u +%Y%m%d)
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          else
+            HEAD_SHA="${GITHUB_SHA}"
+          fi
+          SHORT_SHA=${HEAD_SHA::7}
+          echo "tag=${DATE}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump tags in deployment manifests
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          set -e
+          for svc in api-predict-mme frontend-mme; do
+            file="k8s/apps/${svc}/deployment.yaml"
+            if [ ! -f "$file" ]; then
+              echo "Skip $file (no existe)"
+              continue
+            fi
+            sed -i -E "s|(image:\s*${DOCKERHUB_USERNAME}/mme-${svc}):.+|\1:${TAG}|" "$file"
+            echo "Bumped $svc → ${TAG}"
+            grep -E "image:\s*${DOCKERHUB_USERNAME}/mme-${svc}" "$file" || true
+          done
+
+      - name: Commit and push if changed
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes; ya está al día."
+            exit 0
+          fi
+          git add k8s/apps/
+          git commit -m "chore(k8s): bump image tags to ${TAG}"
+          git push origin main

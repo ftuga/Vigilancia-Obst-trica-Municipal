@@ -1,0 +1,118 @@
+name: Build and Push to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'code/**'
+      - '.github/workflows/build-and-push.yml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Servicio a buildear (vacío = todos)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - api-predict-mme
+          - frontend-mme
+          - airflow
+          - mlflow
+          - jupyterlab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compute-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: |
+          DATE=$(date -u +%Y%m%d)
+          SHORT_SHA=${GITHUB_SHA::7}
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "tag=${DATE}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            SAFE_BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '/' '-')
+            echo "tag=${SAFE_BRANCH}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: compute-tag
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api-predict-mme
+            context: code/api_predict_mme
+            dockerfile: Dockerfile
+            platforms: linux/amd64,linux/arm64
+          - name: frontend-mme
+            context: code/frontend_mme
+            dockerfile: Dockerfile
+            platforms: linux/amd64,linux/arm64
+          - name: airflow
+            context: code/proyecto_01/airflow
+            dockerfile: Dockerfile
+            platforms: linux/amd64
+          - name: mlflow
+            context: code/proyecto_01/mlflow
+            dockerfile: Dockerfile
+            platforms: linux/amd64,linux/arm64
+          - name: jupyterlab
+            context: code/proyecto_01/jupyterlab
+            dockerfile: Dockerfile
+            platforms: linux/amd64
+    steps:
+      - name: Skip if specific service was requested and not this one
+        if: ${{ github.event.inputs.service != '' && github.event.inputs.service != matrix.name }}
+        run: |
+          echo "Skipping ${{ matrix.name }} because input.service=${{ github.event.inputs.service }}"
+          exit 0
+
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        if: ${{ github.event.inputs.service == '' || github.event.inputs.service == matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          platforms: ${{ matrix.platforms }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/mme-${{ matrix.name }}:${{ needs.compute-tag.outputs.tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mme-${{ matrix.name }}:latest
+          cache-from: type=gha,scope=mme-${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=mme-${{ matrix.name }}
+          provenance: false
+
+  notify-bump:
+    needs: [compute-tag, build]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - run: |
+          echo "tag=${{ needs.compute-tag.outputs.tag }}"
+          echo "Trigger del workflow bump-image-tags via workflow_run."
