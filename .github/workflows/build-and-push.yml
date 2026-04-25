@@ -66,8 +66,8 @@ jobs:
             dockerfile: Dockerfile
             platforms: linux/amd64,linux/arm64
           - name: airflow
-            context: code/proyecto_01/airflow
-            dockerfile: Dockerfile
+            context: code
+            dockerfile: proyecto_01/airflow/Dockerfile
             platforms: linux/amd64
           - name: mlflow
             context: code/proyecto_01/mlflow
