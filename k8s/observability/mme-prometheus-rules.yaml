@@ -1,0 +1,110 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mme-rules
+  namespace: observability
+  labels:
+    release: kube-prom-stack
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+spec:
+  groups:
+    - name: mme.training.alerts
+      interval: 60s
+      rules:
+        - alert: MmeEtlStale
+          expr: (time() - max(timestamp(changes(airflow_dagrun_duration_seconds_count{dag_id="1-mme_etl_medallion",status="success"}[14d]) > 0))) > 1209600
+          for: 30m
+          labels:
+            severity: warning
+            service: mme
+            pipeline: etl
+          annotations:
+            summary: "DAG ETL MME sin éxito en 14 días"
+            description: "El DAG 1-mme_etl_medallion no tuvo corridas exitosas en las últimas 2 semanas."
+
+        - alert: MmeEtlFailed
+          expr: increase(airflow_dagrun_duration_seconds_count{dag_id="1-mme_etl_medallion",status="failed"}[24h]) > 0
+          for: 10m
+          labels:
+            severity: warning
+            service: mme
+            pipeline: etl
+          annotations:
+            summary: "DAG ETL MME falló en las últimas 24h"
+            description: "Revisar logs del scheduler para 1-mme_etl_medallion."
+
+        - alert: MmeTrainStale
+          expr: (time() - max(timestamp(changes(airflow_dagrun_duration_seconds_count{dag_id="2-mme_train_and_promote",status="success"}[21d]) > 0))) > 1814400
+          for: 1h
+          labels:
+            severity: warning
+            service: mme
+            pipeline: training
+          annotations:
+            summary: "DAG train+promote MME sin éxito en 21 días"
+            description: "Modelo en Registry puede estar desactualizado."
+
+        - alert: MmeTrainFailed
+          expr: increase(airflow_dagrun_duration_seconds_count{dag_id="2-mme_train_and_promote",status="failed"}[24h]) > 0
+          for: 10m
+          labels:
+            severity: critical
+            service: mme
+            pipeline: training
+          annotations:
+            summary: "DAG train+promote MME falló en 24h"
+            description: "Revisar validate_report. Probable gate Go/No-Go."
+
+        - alert: MmeModelGateBelowThreshold
+          expr: max(mme_model_test_spearman_dpto) < 0.3
+          for: 30m
+          labels:
+            severity: critical
+            service: mme
+            pipeline: training
+          annotations:
+            summary: "Spearman dpto < 0.3 — gate Go/No-Go fallando"
+            description: "El mejor Spearman en test cayó por debajo del umbral MVP."
+
+        - alert: MmeModelPrecisionLow
+          expr: max(mme_model_test_precision_at_50) < 0.08
+          for: 30m
+          labels:
+            severity: warning
+            service: mme
+            pipeline: training
+          annotations:
+            summary: "Precision@top-50 < 0.08"
+            description: "El top-50 predicho se desalinea con el top-50 real."
+
+        - alert: MmeFeatureDriftSevere
+          expr: max(mme_feature_psi) > 0.25
+          for: 1h
+          labels:
+            severity: warning
+            service: mme
+            pipeline: drift
+          annotations:
+            summary: "Drift severo en feature — PSI > 0.25"
+            description: "Al menos una feature presenta PSI >0.25. Evaluar re-entrenamiento."
+
+        - alert: MmeDriftDetected
+          expr: mme_drift_detected == 1
+          for: 15m
+          labels:
+            severity: info
+            service: mme
+            pipeline: drift
+          annotations:
+            summary: "Drift detectado por check_drift"
+            description: "El gate del DAG 2 marcó gate_train=True por drift."
+
+        - alert: MlflowDown
+          expr: kube_deployment_status_replicas_available{namespace="mlflow",deployment="mlflow-tracking"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            service: mlflow
+          annotations:
+            summary: "MLflow tracking server caído"
+            description: "El deployment mlflow-tracking no tiene réplicas disponibles."
