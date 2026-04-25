@@ -1,0 +1,171 @@
+# Apache Airflow Helm chart values.
+# Chart 1.16.0 · App version 2.10.5 (última 2.x; 1.17+ son Airflow 3.x).
+# Postgres externo (postgres-airflow release del namespace).
+# Redis interno del chart, password desde Secret externo.
+# DAGs vía gitSync sobre repo público.
+# Imagen oficial 2.10.5 + apache-airflow-providers-postgres.
+# En B9 se reemplaza por luisfrontuso10/mme-airflow:<tag>.
+
+executor: CeleryExecutor
+
+defaultAirflowRepository: apache/airflow
+defaultAirflowTag: "2.10.5"
+airflowVersion: "2.10.5"
+
+# Postgres externo.
+postgresql:
+  enabled: false
+
+data:
+  metadataConnection:
+    user: airflow
+    pass: ""
+    protocol: postgresql
+    host: postgres-airflow.airflow.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+  metadataSecretName: airflow-metadata-conn
+  brokerUrlSecretName: airflow-broker-url
+  resultBackendSecretName: airflow-result-backend
+
+# Redis interno con password desde Secret externo.
+# Bitnami subchart usa la key 'redis-password' (agregada al secret en bootstrap).
+redis:
+  enabled: true
+  passwordSecretName: redis-creds
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: microk8s-hostpath
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 1000m
+
+# Fernet + webserver-secret-key desde Secret existente.
+fernetKeySecretName: airflow-fernet
+webserverSecretKeySecretName: airflow-webserver-secret
+
+# Re-empaquetamos las keys al formato que cada chart espera.
+# airflow-runtime tiene: fernet-key, secret-key, admin-user, admin-password.
+# Chart busca key 'fernet-key' en fernetKeySecretName y 'webserver-secret-key' en webserverSecretKeySecretName.
+extraSecretsTemplates: {}
+
+# Configuración Core/Webserver/Database via env (string yaml, schema flexible).
+extraEnv: |
+  - name: AIRFLOW__CORE__LOAD_EXAMPLES
+    value: "False"
+  - name: AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION
+    value: "True"
+  - name: AIRFLOW__WEBSERVER__EXPOSE_CONFIG
+    value: "False"
+  - name: AIRFLOW__METRICS__STATSD_ON
+    value: "True"
+  - name: AIRFLOW__METRICS__STATSD_HOST
+    value: "airflow-statsd"
+  - name: AIRFLOW__METRICS__STATSD_PORT
+    value: "9125"
+
+# Variables del proyecto (rutas, MLflow, MinIO) desde ConfigMap mme-env.
+extraEnvFrom: |
+  - configMapRef:
+      name: mme-env
+
+# Webserver expuesto vía NodePort (.env: AIRFLOW_NODEPORT=30080).
+webserver:
+  service:
+    type: NodePort
+    ports:
+      - name: airflow-ui
+        port: 8080
+        targetPort: 8080
+        nodePort: 30080
+  defaultUser:
+    enabled: false
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+scheduler:
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+  logGroomerSidecar:
+    enabled: true
+    retentionDays: 15
+
+triggerer:
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+workers:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+  persistence:
+    enabled: false
+
+dags:
+  gitSync:
+    enabled: true
+    repo: https://github.com/ftuga/Vigilancia-Obst-trica-Municipal.git
+    branch: main
+    rev: HEAD
+    depth: 1
+    subPath: code/proyecto_01/airflow/dags_mme
+    period: 60s
+    wait: 30
+    maxFailures: 5
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 500m
+  persistence:
+    enabled: false
+
+logs:
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClassName: microk8s-hostpath
+
+statsd:
+  enabled: true
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi
+      cpu: 500m
+
+cleanup:
+  enabled: false
+
+networkPolicies:
+  enabled: false

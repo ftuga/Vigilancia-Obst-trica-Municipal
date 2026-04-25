@@ -68,8 +68,10 @@ main() {
         "admin-user=${AIRFLOW_ADMIN_USER}" \
         "admin-password=${AIRFLOW_ADMIN_PASSWORD}"
 
+    # Bitnami redis subchart busca key 'redis-password'. Agregamos ambas.
     apply_secret_literal airflow redis-creds \
-        "password=${REDIS_PASSWORD}"
+        "password=${REDIS_PASSWORD}" \
+        "redis-password=${REDIS_PASSWORD}"
 
     apply_secret_literal apps mlflow-s3 \
         "AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}" \

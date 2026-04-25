@@ -133,6 +133,42 @@ Ningún manifest del repo tiene credenciales hardcodeadas. Todo viene de `.env` 
 
 ---
 
+## Cuotas de recursos
+
+Política: todo container tiene `requests` y `limits`. Sin excepciones (incluye sidecars, exporters, statsd, gitSync, post-install jobs).
+
+Tiers base:
+
+| Tier | requests.mem | limits.mem | requests.cpu | limits.cpu | Aplica a |
+|---|---|---|---|---|---|
+| `minimal` | 64Mi | 256Mi | 50m | 500m | sidecars, exporters, gitSync, statsd, post-jobs |
+| `small` | 128Mi | 512Mi | 100m | 1000m | redis, dagProcessor |
+| `medium` | 256Mi | 1Gi | 100m | 1000m | postgres, triggerer |
+| `large` | 512Mi | 2Gi | 200m | 2000m | webserver, scheduler, workers, mlflow, api_predict_mme, frontend_mme |
+
+Suma estimada (1 réplica de cada componente, 2 workers Airflow):
+
+| Categoría | Mem requests | Mem limits | CPU requests | CPU limits |
+|---|---:|---:|---:|---:|
+| postgres × 2 (medium + metrics minimal × 2) | ~640Mi | ~2.5Gi | ~300m | ~3000m |
+| minio (large + 2 jobs minimal) | ~640Mi | ~2.5Gi | ~300m | ~3000m |
+| airflow (web large + sched large + 2 workers + triggerer + redis + statsd + gitSync) | ~3Gi | ~12Gi | ~1.4 | ~13 |
+| mlflow (large) | ~512Mi | ~2Gi | ~200m | ~2000m |
+| apps (api + frontend + jupyter, large × 3) | ~1.5Gi | ~6Gi | ~600m | ~6000m |
+| **Total mínimo del stack MME** | **~6.3Gi** | ~25Gi | ~2.8 cores | ~27 cores |
+| Observability addon (kube-prom-stack + Loki + Tempo) | ~2Gi | ~6Gi | ~500m | ~5 |
+| ArgoCD addon | ~512Mi | ~1Gi | ~200m | ~2 |
+
+Verificar capacidad del nodo:
+
+```bash
+microk8s kubectl describe node $(microk8s kubectl get nodes -o name | head -1) | grep -A 5 "Allocatable"
+```
+
+Regla: requests totales ≤ 80% allocatable. Limits pueden sumar más (no se reservan).
+
+---
+
 ## Replicación a otro host
 
 Ver `code/docs/mme/runbook.md` §10 (multi-host con `microk8s join`).
