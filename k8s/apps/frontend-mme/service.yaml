@@ -11,6 +11,6 @@ spec:
     app.kubernetes.io/name: frontend-mme
   ports:
     - name: http
-      port: 3000
-      targetPort: 3000
+      port: 3001
+      targetPort: 3001
       nodePort: 30602
