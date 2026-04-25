@@ -120,40 +120,22 @@ triggerer:
 
 workers:
   replicas: 2
-  # Patch in-place celery_command.py al startup: Airflow 2.10.5 (y provider-celery
-  # hasta 3.10.0) NO incluye --pidfile en `options`, lo que rompe celery con
-  # AttributeError 'NoneType'.split en nodesplit. Inyecta --pidfile inline.
+  # Bypass de `airflow celery worker` (broken upstream: no propaga --pidfile).
+  # Llamamos celery CLI directo. Airflow recoge logs vía StatsD + DB.
+  # Trade-off: logs en-task no se sirven al webserver vía 8793 — los DAGs corren OK,
+  # logs disponibles via worker stdout y persistencia /opt/airflow/logs.
   args:
     - "bash"
     - "-c"
     - |
-      python <<'PYEOF'
-      import os, py_compile
-      p='/home/airflow/.local/lib/python3.11/site-packages/airflow/providers/celery/cli/celery_command.py'
-      s=open(p).read()
-      SENTINEL='__MME_PIDFILE_PATCH__'
-      if SENTINEL not in s:
-          old='    # Setup Celery worker\n    options = [\n        "worker",'
-          new=(
-              '    # Setup Celery worker\n'
-              '    import os as _mme_os  # __MME_PIDFILE_PATCH__\n'
-              '    options = [\n'
-              '        "worker",\n'
-              '        "--pidfile=/tmp/celery_%d.pid" % _mme_os.getpid(),\n'
-          )
-          if old not in s:
-              raise SystemExit('[patch] anchor not found - file shape changed')
-          s2 = s.replace(old, new, 1)
-          open(p,'w').write(s2)
-          py_compile.compile(p, doraise=True)
-          print('[patch] celery_command.py: --pidfile injected and compiled OK')
-      else:
-          print('[patch] celery_command.py already patched')
-      PYEOF
-      echo "---PATCH SNIPPET---"
-      grep -A4 '__MME_PIDFILE_PATCH__' /home/airflow/.local/lib/python3.11/site-packages/airflow/providers/celery/cli/celery_command.py || echo "NOT FOUND"
-      echo "---END---"
-      exec airflow celery worker
+      exec celery --app airflow.providers.celery.executors.celery_executor.app worker \
+        --pidfile=/tmp/celery_${HOSTNAME}.pid \
+        --hostname=celery@%h \
+        --loglevel=INFO \
+        --concurrency=16 \
+        -O fair \
+        --without-mingle \
+        --queues=default
   resources:
     requests:
       memory: 512Mi
