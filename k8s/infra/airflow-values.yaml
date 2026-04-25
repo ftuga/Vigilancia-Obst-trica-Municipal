@@ -123,7 +123,7 @@ workers:
   args:
     - "bash"
     - "-c"
-    - 'exec airflow celery worker --pid /tmp/celery_${HOSTNAME}.pid'
+    - 'pip install --user --quiet --upgrade --force-reinstall "celery==5.3.6" && exec airflow celery worker'
   resources:
     requests:
       memory: 512Mi
