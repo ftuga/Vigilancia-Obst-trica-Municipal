@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: airflow-data
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   storageClassName: microk8s-hostpath
   resources:
     requests:
