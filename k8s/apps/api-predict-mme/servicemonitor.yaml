@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-predict-mme
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: api-predict-mme
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-predict-mme
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

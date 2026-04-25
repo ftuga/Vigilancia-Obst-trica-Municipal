@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mlflow
+  namespace: mlflow
+  labels:
+    app.kubernetes.io/name: mlflow
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mlflow
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
