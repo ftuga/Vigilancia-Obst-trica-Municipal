@@ -37,14 +37,85 @@ bash k8s/scripts/00-setup-microk8s.sh
 
 # 2. Configurar variables
 cp k8s/.env.example k8s/.env
-$EDITOR k8s/.env
+```
 
+### 2.1 Generar credenciales
+
+Los placeholders `changeme-*` en `.env` deben reemplazarse antes de aplicar Secrets. Comandos exactos:
+
+```bash
+# Postgres x2 y MinIO root y Airflow admin y Redis (24 bytes hex = 48 chars)
+openssl rand -hex 24   # → POSTGRES_AIRFLOW_PASSWORD
+openssl rand -hex 24   # → POSTGRES_MLFLOW_PASSWORD
+openssl rand -hex 24   # → MINIO_ROOT_PASSWORD
+openssl rand -hex 24   # → AIRFLOW_ADMIN_PASSWORD
+openssl rand -hex 24   # → REDIS_PASSWORD
+
+# Airflow secret (32 bytes hex = 64 chars, requerido por gunicorn)
+openssl rand -hex 32   # → AIRFLOW_SECRET_KEY
+
+# Airflow Fernet key (44 chars base64, formato fijo)
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# → AIRFLOW_FERNET_KEY
+```
+
+Editar `k8s/.env` y reemplazar cada `changeme-*` con los valores generados.
+
+Atajo en una pasada con `python3` (no requiere entrada manual):
+
+```bash
+python3 - <<'PY'
+import secrets
+from cryptography.fernet import Fernet
+
+vals = {
+    'POSTGRES_AIRFLOW_PASSWORD': secrets.token_hex(24),
+    'POSTGRES_MLFLOW_PASSWORD':  secrets.token_hex(24),
+    'MINIO_ROOT_PASSWORD':       secrets.token_hex(24),
+    'AIRFLOW_FERNET_KEY':        Fernet.generate_key().decode(),
+    'AIRFLOW_SECRET_KEY':        secrets.token_hex(32),
+    'AIRFLOW_ADMIN_PASSWORD':    secrets.token_hex(24),
+    'REDIS_PASSWORD':            secrets.token_hex(24),
+}
+src = open('k8s/.env').read()
+placeholders = {
+    'POSTGRES_AIRFLOW_PASSWORD':'changeme-airflow',
+    'POSTGRES_MLFLOW_PASSWORD':'changeme-mlflow',
+    'MINIO_ROOT_PASSWORD':'changeme-minio-root',
+    'AIRFLOW_FERNET_KEY':'changeme-fernet-44chars-base64',
+    'AIRFLOW_SECRET_KEY':'changeme-secret-64hex',
+    'AIRFLOW_ADMIN_PASSWORD':'changeme-admin',
+    'REDIS_PASSWORD':'changeme-redis',
+}
+for k, v in vals.items():
+    src = src.replace(f'{k}={placeholders[k]}', f'{k}={v}')
+open('k8s/.env','w').write(src)
+print('rotated:', sorted(vals.keys()))
+PY
+```
+
+Backup recomendado: copiar `k8s/.env` a un gestor de secretos personal (1Password, Bitwarden). Si se pierde, los datos persistidos en Postgres/MinIO quedan inaccesibles salvo migración.
+
+### 2.2 Aplicar al cluster
+
+```bash
 # 3. Crear namespaces
 microk8s kubectl apply -f k8s/infra/00-namespaces.yaml
 
-# 4. Generar secrets y configmaps
+# 4. Generar Secrets y ConfigMap base desde .env
 bash k8s/scripts/01-bootstrap-secrets.sh
 bash k8s/scripts/02-render-env-configmap.sh
+```
+
+### 2.3 Recuperar credenciales después
+
+```bash
+# Desde el .env local
+grep '^AIRFLOW_ADMIN_PASSWORD=' k8s/.env
+
+# O desde el cluster (Secret K8s base64-encoded)
+microk8s kubectl get secret airflow-runtime -n airflow \
+  -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
 Después de esto, los siguientes bloques (B4-B11) instalan los servicios vía Helm + ArgoCD.

@@ -43,19 +43,24 @@ main() {
         ensure_namespace "$ns"
     done
 
+    # bitnami/postgresql chart espera keys: postgres-password (admin) y password (user).
+    # Mono-tenant: mismo valor para ambos.
     apply_secret_literal airflow postgres-airflow-creds \
         "username=${POSTGRES_AIRFLOW_USER}" \
         "password=${POSTGRES_AIRFLOW_PASSWORD}" \
+        "postgres-password=${POSTGRES_AIRFLOW_PASSWORD}" \
         "database=${POSTGRES_AIRFLOW_DB}"
 
     apply_secret_literal mlflow postgres-mlflow-creds \
         "username=${POSTGRES_MLFLOW_USER}" \
         "password=${POSTGRES_MLFLOW_PASSWORD}" \
+        "postgres-password=${POSTGRES_MLFLOW_PASSWORD}" \
         "database=${POSTGRES_MLFLOW_DB}"
 
+    # Chart minio/minio espera keys camelCase rootUser/rootPassword.
     apply_secret_literal data minio-creds \
-        "root-user=${MINIO_ROOT_USER}" \
-        "root-password=${MINIO_ROOT_PASSWORD}"
+        "rootUser=${MINIO_ROOT_USER}" \
+        "rootPassword=${MINIO_ROOT_PASSWORD}"
 
     apply_secret_literal airflow airflow-runtime \
         "fernet-key=${AIRFLOW_FERNET_KEY}" \

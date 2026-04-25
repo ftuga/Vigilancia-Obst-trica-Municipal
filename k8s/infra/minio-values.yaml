@@ -1,0 +1,38 @@
+fullnameOverride: minio
+
+mode: standalone
+
+existingSecret: minio-creds
+
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: microk8s-hostpath
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 200m
+  limits:
+    memory: 2Gi
+    cpu: 2000m
+
+service:
+  type: NodePort
+  nodePort: 30900
+
+consoleService:
+  type: NodePort
+  nodePort: 30901
+
+buckets:
+  - name: mlflows3
+    policy: none
+    purge: false
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: data
+    additionalLabels:
+      release: kube-prom-stack
