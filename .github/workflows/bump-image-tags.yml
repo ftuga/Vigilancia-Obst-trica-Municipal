@@ -52,8 +52,14 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           set -e
-          for svc in api-predict-mme frontend-mme; do
-            file="k8s/apps/${svc}/deployment.yaml"
+          # Map: matrix svc name → folder en k8s/apps/
+          declare -A SVC_DIR=(
+              [api-predict]=api-predict-mme
+              [frontend]=frontend-mme
+          )
+          for svc in "${!SVC_DIR[@]}"; do
+            dir="${SVC_DIR[$svc]}"
+            file="k8s/apps/${dir}/deployment.yaml"
             if [ ! -f "$file" ]; then
               echo "Skip $file (no existe)"
               continue

@@ -20,8 +20,8 @@ on:
         type: choice
         options:
           - ''
-          - api-predict-mme
-          - frontend-mme
+          - api-predict
+          - frontend
           - airflow
           - mlflow
           - jupyterlab
@@ -57,11 +57,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: api-predict-mme
+          - name: api-predict
             context: code
             dockerfile: api_predict_mme/Dockerfile
             platforms: linux/amd64,linux/arm64
-          - name: frontend-mme
+          - name: frontend
             context: code/frontend_mme
             dockerfile: Dockerfile
             platforms: linux/amd64,linux/arm64
