@@ -120,6 +120,10 @@ triggerer:
 
 workers:
   replicas: 2
+  args:
+    - "bash"
+    - "-c"
+    - 'exec airflow celery worker --pidfile=/tmp/celery_${HOSTNAME}.pid'
   resources:
     requests:
       memory: 512Mi
