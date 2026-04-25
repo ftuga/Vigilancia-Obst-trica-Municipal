@@ -120,10 +120,6 @@ triggerer:
 
 workers:
   replicas: 2
-  args:
-    - "bash"
-    - "-c"
-    - 'pip install --quiet --upgrade --force-reinstall "celery==5.3.6" && exec airflow celery worker'
   resources:
     requests:
       memory: 512Mi
