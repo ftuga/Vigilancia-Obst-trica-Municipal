@@ -94,6 +94,6 @@ jobs:
             echo "No changes; ya está al día."
             exit 0
           fi
-          git add k8s/apps/
+          git add k8s/apps/ k8s/infra/airflow-values.yaml
           git commit -m "chore(k8s): bump image tags to ${TAG}"
           git push origin main
