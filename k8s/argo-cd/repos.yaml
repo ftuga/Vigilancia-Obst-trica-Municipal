@@ -15,16 +15,18 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: helm-repo-bitnami
+  name: helm-repo-bitnami-oci
   namespace: argocd
   labels:
     argocd.argoproj.io/secret-type: repository
 type: Opaque
 stringData:
+  # Bitnami HTTPS repo (charts.bitnami.com) está deprecado y devuelve "invalid_reference".
+  # Charts oficiales actuales viven en OCI registry public.
   type: helm
-  url: https://charts.bitnami.com/bitnami
-  name: bitnami
-  insecure: "true"
+  url: registry-1.docker.io/bitnamicharts
+  name: bitnami-oci
+  enableOCI: "true"
 ---
 apiVersion: v1
 kind: Secret

@@ -228,7 +228,7 @@ Kompose genera manifests pobres (sin probes, sin PVCs, sin HPAs, mezcla ConfigMa
 
 ### 5.4 Hostnames cortos (`<svc>.<ns>`) en lugar de FQDN
 
-WSL2 incorporates search domain externo `sersocial.org` con wildcard, que con `ndots:5` (default K8s) hace que FQDNs `<svc>.<ns>.svc.cluster.local` resuelvan a IPs públicas. Hostnames cortos `<svc>.<ns>` evitan el problema sin cambiar `dnsConfig` del cluster.
+En entornos WSL2 con red corporativa, el host puede inyectar un search domain externo con wildcard que, combinado con `ndots:5` (default K8s), hace que FQDNs `<svc>.<ns>.svc.cluster.local` resuelvan a IPs públicas en lugar del cluster. Hostnames cortos `<svc>.<ns>` evitan el problema sin cambiar `dnsConfig` del cluster.
 
 ### 5.5 Resources requests + limits obligatorios
 

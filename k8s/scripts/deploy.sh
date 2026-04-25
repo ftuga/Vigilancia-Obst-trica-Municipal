@@ -227,8 +227,45 @@ deploy_observability_dashboards() {
     ok "3 dashboards Grafana + 9 alertas Prometheus aplicadas"
 }
 
+patch_argocd_repo_server_hostaliases() {
+    # Workaround para redes con interceptación TLS sobre IPv6 (MITM en proxies/firewalls
+    # corporativos). El repo-server falla `helm pull` cuando el path IPv6 hacia los CDN
+    # de los charts upstream termina en un interceptor con cert ajeno. Forzamos los hosts
+    # conocidos vía /etc/hosts del pod usando hostAliases con IPv4 estable de Fastly/CDN.
+    # Idempotente: si ya está aplicado, kubectl patch es no-op.
+    local patch
+    patch=$(cat <<'EOF'
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "hostAliases": [
+          {"ip": "151.101.2.132", "hostnames": ["airflow.apache.org"]},
+          {"ip": "65.108.204.189", "hostnames": ["archive.apache.org"]},
+          {"ip": "185.199.110.153", "hostnames": ["charts.min.io"]}
+        ]
+      }
+    }
+  }
+}
+EOF
+    )
+    $KUBECTL patch deployment -n argocd argo-cd-argocd-repo-server \
+        --type=strategic --patch "$patch" >/dev/null 2>&1 || true
+    $KUBECTL rollout status -n argocd deploy/argo-cd-argocd-repo-server --timeout=90s >/dev/null 2>&1 || true
+    ok "argocd-repo-server hostAliases aplicado (workaround MITM IPv6)"
+}
+
 deploy_argocd_apps() {
     step "ArgoCD app-of-apps + 7 hijas"
+
+    # Pre-requisito: charts upstream (airflow.apache.org, archive.apache.org, charts.min.io)
+    # se pullean por IPv4 vía hostAliases. Sin esto, redes con MITM TLS sobre IPv6 rompen el helm pull.
+    patch_argocd_repo_server_hostaliases
+
+    # repos.yaml: declara los Helm repositories como Secrets (incluye Bitnami OCI).
+    $KUBECTL apply -f "$REPO_ROOT/k8s/argo-cd/repos.yaml" 2>&1 | grep -v "^Warning:" || true
+
     $KUBECTL apply -f "$REPO_ROOT/k8s/argo-cd/app-of-apps.yaml" 2>&1 | grep -v "^Warning:" || true
 
     local target_port=${ARGOCD_NODEPORT:-30443}
