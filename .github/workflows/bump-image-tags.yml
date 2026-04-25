@@ -69,6 +69,21 @@ jobs:
             grep -E "image:\s*${DOCKERHUB_USERNAME}/mme-${svc}" "$file" || true
           done
 
+          # Charts upstream con custom image: bumpear tag en values.yaml.
+          # airflow: defaultAirflowRepository + defaultAirflowTag
+          afile="k8s/infra/airflow-values.yaml"
+          if [ -f "$afile" ]; then
+            sed -i -E "s|^(defaultAirflowTag:)\s*\".+\"|\1 \"${TAG}\"|" "$afile"
+            echo "Bumped airflow chart → ${TAG}"
+            grep -E "^defaultAirflowTag:" "$afile" || true
+          fi
+          # mlflow: image.tag (cuando se decida buildear imagen custom; hoy es bitnamilegacy)
+          # mfile="k8s/infra/mlflow-values.yaml"
+          # if [ -f "$mfile" ] && grep -q "${DOCKERHUB_USERNAME}/mme-mlflow" "$mfile"; then
+          #   sed -i -E "s|(repository:\s*${DOCKERHUB_USERNAME}/mme-mlflow.*\n.*tag:\s*).+|\1\"${TAG}\"|" "$mfile"
+          #   echo "Bumped mlflow chart → ${TAG}"
+          # fi
+
       - name: Commit and push if changed
         env:
           TAG: ${{ steps.tag.outputs.tag }}

@@ -8,8 +8,11 @@
 
 executor: CeleryExecutor
 
-defaultAirflowRepository: apache/airflow
-defaultAirflowTag: "2.10.5"
+# Imagen custom buildeada por GHA build-and-push.yml.
+# Trae el paquete `mme` instalado para que DAGs hagan `from mme.*` sin ImportError.
+# Tag bumpeado por GHA bump-image-tags.yml en cada push a main que toque code/proyecto_01/airflow/.
+defaultAirflowRepository: luisfrontuso10/mme-airflow
+defaultAirflowTag: "20260425-b02b45e"
 airflowVersion: "2.10.5"
 
 # Postgres externo.
