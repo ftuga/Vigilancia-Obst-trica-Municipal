@@ -28,35 +28,98 @@ fail()  { printf '  %s %s\n' "$(red '✗')" "$1"; exit 1; }
 # Pre-flight
 # ─────────────────────────────────────────────────────────────────────────────
 
+check_systemd() {
+    if [[ "$(ps -p 1 -o comm= 2>/dev/null)" != "systemd" ]]; then
+        warn "systemd no está corriendo (PID 1 no es systemd)."
+        if grep -qi microsoft /proc/version 2>/dev/null; then
+            cat <<EOF
+  En WSL2: agregar systemd y reiniciar:
+    echo -e '[boot]\nsystemd=true' | sudo tee /etc/wsl.conf
+  Después en PowerShell:  wsl --shutdown
+  Reabrí terminal y volvé a correr deploy.sh.
+EOF
+        fi
+        fail "systemd requerido"
+    fi
+    ok "systemd activo"
+}
+
+ensure_microk8s() {
+    if ! command -v microk8s >/dev/null; then
+        warn "microk8s no instalado — ejecutando 00-setup-microk8s.sh"
+        bash "$REPO_ROOT/k8s/scripts/00-setup-microk8s.sh"
+        # Si el setup acaba de agregar el user al grupo, hace exit 0 antes de habilitar addons.
+        if ! groups "$USER" | grep -q microk8s; then
+            cat <<EOF
+
+$(yellow '⚠ Tu usuario fue agregado al grupo microk8s pero la sesión actual no lo tiene.')
+Reabrí terminal o ejecutá:
+    newgrp microk8s
+Después volvé a correr:
+    bash k8s/scripts/deploy.sh
+EOF
+            exit 0
+        fi
+    fi
+    ok "microk8s instalado"
+}
+
+ensure_addons() {
+    local need=(community dns ingress hostpath-storage helm3 registry observability argocd)
+    local missing=()
+    local enabled
+    enabled=$(microk8s status --format=short 2>/dev/null || true)
+    for a in "${need[@]}"; do
+        if ! echo "$enabled" | grep -q "addons:enabled:.*${a%%:*}"; then
+            missing+=("$a")
+        fi
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        warn "Addons faltantes: ${missing[*]} — habilitando..."
+        for a in "${missing[@]}"; do
+            microk8s enable "$a" 2>&1 | tail -3 || true
+        done
+    fi
+    if ! echo "$enabled" | grep -q "addons:enabled:.*metallb"; then
+        warn "Habilitando metallb (rango 10.64.140.43-49)..."
+        microk8s enable "metallb:10.64.140.43-10.64.140.49" 2>&1 | tail -3 || true
+    fi
+    ok "Addons MicroK8s OK"
+}
+
 preflight() {
     step "Pre-flight"
-
-    command -v git >/dev/null  || fail "git no encontrado"
-    command -v microk8s >/dev/null || fail "microk8s no encontrado. Ejecutar k8s/scripts/00-setup-microk8s.sh primero"
+    command -v git >/dev/null || fail "git no encontrado (sudo apt install git)"
+    command -v snap >/dev/null || fail "snap no encontrado (no soportado en esta distro)"
+    check_systemd
+    ensure_microk8s
 
     if ! groups "$USER" | grep -q microk8s; then
         fail "Usuario $USER no está en grupo microk8s. Ejecutar: sudo usermod -a -G microk8s $USER && newgrp microk8s"
     fi
+    ok "Usuario $USER en grupo microk8s"
+
+    microk8s status --wait-ready --timeout 120 >/dev/null 2>&1 || fail "MicroK8s no llega a Ready"
+    ok "Cluster MicroK8s Ready"
+
+    ensure_addons
 
     if [[ ! -f "$ENV_FILE" ]]; then
-        fail "$ENV_FILE no existe. Copiar k8s/.env.example y completar (ver k8s/README.md §Generar credenciales)"
-    fi
-    ok "git, microk8s, .env presentes"
+        cat <<EOF
 
-    if ! $KUBECTL get nodes >/dev/null 2>&1; then
-        fail "Cluster MicroK8s no responde. Probar: microk8s status"
+$(yellow '⚠ ENV file no existe.') Crealo primero:
+  cp k8s/.env.example k8s/.env
+  # Después generar credenciales reales (ver k8s/README.md §2.1)
+EOF
+        fail "$ENV_FILE no existe"
     fi
-    ok "Cluster MicroK8s reachable"
-
-    if ! $KUBECTL get ns argocd >/dev/null 2>&1; then
-        fail "Addon argocd no habilitado. Ejecutar: microk8s enable argocd"
-    fi
-    ok "Addon argocd presente"
 
     if grep -E '^(POSTGRES_AIRFLOW_PASSWORD|MINIO_ROOT_PASSWORD|AIRFLOW_FERNET_KEY)=changeme' "$ENV_FILE" >/dev/null; then
-        fail "$ENV_FILE tiene placeholders 'changeme-*'. Generar credenciales reales (k8s/README.md §2.1)"
+        warn "ENV con placeholders 'changeme-*' — rotando automáticamente..."
+        bash "$REPO_ROOT/k8s/scripts/rotate-credentials.sh" "$ENV_FILE"
+        ok "Credenciales rotadas. Hacé backup de $ENV_FILE en gestor de secretos."
     fi
-    ok ".env con credenciales generadas (sin placeholders)"
+    ok ".env presente con credenciales reales"
 }
 
 check_logins_optional() {

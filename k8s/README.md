@@ -31,6 +31,19 @@ k8s/
 
 ## Setup desde cero
 
+### Express (1 comando, recomendado)
+
+```bash
+cp k8s/.env.example k8s/.env
+bash k8s/scripts/deploy.sh
+```
+
+`deploy.sh` instala MicroK8s + addons si faltan, rota placeholders `changeme-*` del `.env` con creds reales, despliega los 5 charts + manifests propios + observability + ArgoCD app-of-apps, e imprime URLs y credenciales al final.
+
+Si MicroK8s acaba de ser instalado, el script termina pidiendo reabrir terminal. Volvé a correrlo.
+
+### Manual paso a paso
+
 ```bash
 # 1. Cluster + addons
 bash k8s/scripts/00-setup-microk8s.sh
@@ -39,7 +52,13 @@ bash k8s/scripts/00-setup-microk8s.sh
 cp k8s/.env.example k8s/.env
 ```
 
-### 2.1 Generar credenciales
+### 2.0 Atajo: rotar todas las creds en una pasada
+
+```bash
+bash k8s/scripts/rotate-credentials.sh   # reemplaza changeme-* en k8s/.env
+```
+
+### 2.1 Generar credenciales (manualmente)
 
 Los placeholders `changeme-*` en `.env` deben reemplazarse antes de aplicar Secrets. Comandos exactos:
 
@@ -189,6 +208,16 @@ microk8s kubectl describe node $(microk8s kubectl get nodes -o name | head -1) |
 Regla: requests totales ≤ 80% allocatable. Limits pueden sumar más (no se reservan).
 
 ---
+
+## Desmontar el stack
+
+```bash
+bash k8s/scripts/down.sh --apps      # default: borra apps + airflow + mlflow, conserva PVCs
+bash k8s/scripts/down.sh --all       # + postgres × 2 + minio + PVCs (datos perdidos)
+bash k8s/scripts/down.sh --purge     # + microk8s reset (DESTRUYE el cluster entero)
+```
+
+Confirma con `yes` antes de cada destructivo.
 
 ## Replicación a otro host
 
