@@ -43,8 +43,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Paquete mme se monta via PYTHONPATH en el compose (RO); acá solo código de la app.
+COPY pyproject.toml /opt/mme/pyproject.toml
+COPY src /opt/mme/src
 COPY api_predict_mme/app /app/app
+
+ENV PYTHONPATH=/opt/mme/src
 
 # Usuario non-root
 RUN groupadd -g 10001 app && useradd -r -u 10001 -g app app
