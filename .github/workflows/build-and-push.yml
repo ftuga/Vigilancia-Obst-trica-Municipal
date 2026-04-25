@@ -58,8 +58,8 @@ jobs:
       matrix:
         include:
           - name: api-predict-mme
-            context: code/api_predict_mme
-            dockerfile: Dockerfile
+            context: code
+            dockerfile: api_predict_mme/Dockerfile
             platforms: linux/amd64,linux/arm64
           - name: frontend-mme
             context: code/frontend_mme
