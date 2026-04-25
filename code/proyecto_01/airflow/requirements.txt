@@ -1,8 +1,9 @@
 apache-airflow-providers-postgres>=5.10,<6
-# Pin celery <5.5: bug conocido AttributeError: 'NoneType'.split (nodesplit)
-# cuando Airflow invoca el pidfile sin hostname expansion.
-# Ref: github.com/apache/airflow/issues/42737
-celery>=5.4,<5.5
+# Pin celery <5.4: en 5.4.x el worker explota con
+# AttributeError: 'NoneType'.split (nodesplit) porque Airflow 2.10.5 NO
+# propaga --pidfile a celery options (ver airflow/providers/celery/cli/celery_command.py).
+# 5.3.x funciona correctamente.
+celery>=5.3,<5.4
 joblib
 mlflow>=2.18,<3.0
 scikit-learn>=1.5,<1.9
