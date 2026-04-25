@@ -123,7 +123,7 @@ workers:
   args:
     - "bash"
     - "-c"
-    - 'exec airflow celery worker --pidfile=/tmp/celery_${HOSTNAME}.pid'
+    - 'exec airflow celery worker --pid /tmp/celery_${HOSTNAME}.pid'
   resources:
     requests:
       memory: 512Mi
