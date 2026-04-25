@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-repo-airflow
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: helm
+  url: https://airflow.apache.org
+  name: apache-airflow
+  insecure: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-repo-bitnami
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: helm
+  url: https://charts.bitnami.com/bitnami
+  name: bitnami
+  insecure: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-repo-minio
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: helm
+  url: https://charts.min.io/
+  name: minio
+  insecure: "true"
