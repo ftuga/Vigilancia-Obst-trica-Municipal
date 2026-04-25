@@ -108,6 +108,13 @@ scheduler:
   logGroomerSidecar:
     enabled: true
     retentionDays: 15
+  extraVolumes:
+    - name: mme-data
+      persistentVolumeClaim:
+        claimName: mme-data
+  extraVolumeMounts:
+    - name: mme-data
+      mountPath: /opt/airflow/data/mme
 
 triggerer:
   resources:
@@ -117,9 +124,23 @@ triggerer:
     limits:
       memory: 1Gi
       cpu: 1000m
+  extraVolumes:
+    - name: mme-data
+      persistentVolumeClaim:
+        claimName: mme-data
+  extraVolumeMounts:
+    - name: mme-data
+      mountPath: /opt/airflow/data/mme
 
 workers:
   replicas: 2
+  extraVolumes:
+    - name: mme-data
+      persistentVolumeClaim:
+        claimName: mme-data
+  extraVolumeMounts:
+    - name: mme-data
+      mountPath: /opt/airflow/data/mme
   # Bypass de `airflow celery worker` (broken upstream: no propaga --pidfile).
   # Llamamos celery CLI directo. Airflow recoge logs vía StatsD + DB.
   # Trade-off: logs en-task no se sirven al webserver vía 8793 — los DAGs corren OK,

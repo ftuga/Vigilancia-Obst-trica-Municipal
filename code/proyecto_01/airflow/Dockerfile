@@ -16,6 +16,13 @@ RUN uv pip install --no-cache -r /requirements.txt
 COPY pyproject.toml /opt/mme/pyproject.toml
 COPY README.md /opt/mme/README.md
 COPY src /opt/mme/src
+COPY scripts /opt/mme/scripts
 RUN uv pip install --no-cache --no-deps -e /opt/mme
+
+# Los DAGs asumen REPO_ROOT=/opt/repo (con scripts/ y src/). Symlink permite
+# mantener los DAGs sin tocar y respetar la arquitectura medallón existente.
+USER root
+RUN ln -s /opt/mme /opt/repo
+USER airflow
 
 ENV PYTHONPATH=/opt/mme/src

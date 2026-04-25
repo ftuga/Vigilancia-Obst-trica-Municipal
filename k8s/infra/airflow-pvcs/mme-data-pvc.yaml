@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mme-data
+  namespace: airflow
+  labels:
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+    app.kubernetes.io/component: airflow-data
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: microk8s-hostpath
+  resources:
+    requests:
+      storage: 5Gi
