@@ -128,18 +128,31 @@ workers:
     - "-c"
     - |
       python <<'PYEOF'
+      import os, py_compile
       p='/home/airflow/.local/lib/python3.11/site-packages/airflow/providers/celery/cli/celery_command.py'
       s=open(p).read()
-      if '__MME_PIDFILE_PATCH__' not in s:
+      SENTINEL='__MME_PIDFILE_PATCH__'
+      if SENTINEL not in s:
           old='    # Setup Celery worker\n    options = [\n        "worker",'
-          new='    # Setup Celery worker\n    options = [  # __MME_PIDFILE_PATCH__\n        "worker",\n        "--pidfile", f"/tmp/celery_{__import__(\'os\').getpid()}.pid",'
+          new=(
+              '    # Setup Celery worker\n'
+              '    import os as _mme_os  # __MME_PIDFILE_PATCH__\n'
+              '    options = [\n'
+              '        "worker",\n'
+              '        "--pidfile=/tmp/celery_%d.pid" % _mme_os.getpid(),\n'
+          )
           if old not in s:
               raise SystemExit('[patch] anchor not found - file shape changed')
-          open(p,'w').write(s.replace(old, new, 1))
-          print('[patch] celery_command.py: --pidfile injected at worker options')
+          s2 = s.replace(old, new, 1)
+          open(p,'w').write(s2)
+          py_compile.compile(p, doraise=True)
+          print('[patch] celery_command.py: --pidfile injected and compiled OK')
       else:
           print('[patch] celery_command.py already patched')
       PYEOF
+      echo "---PATCH SNIPPET---"
+      grep -A4 '__MME_PIDFILE_PATCH__' /home/airflow/.local/lib/python3.11/site-packages/airflow/providers/celery/cli/celery_command.py || echo "NOT FOUND"
+      echo "---END---"
       exec airflow celery worker
   resources:
     requests:
