@@ -1,5 +1,10 @@
 name: Build and Push to Docker Hub
 
+# Requiere los siguientes Repository Secrets:
+#   DOCKERHUB_USERNAME  → usuario Docker Hub (luisfrontuso10)
+#   DOCKERHUB_TOKEN     → Personal Access Token con scope read+write+delete
+# Configurar con: gh secret set <NAME> [--body <VALUE>]
+
 on:
   push:
     branches:
