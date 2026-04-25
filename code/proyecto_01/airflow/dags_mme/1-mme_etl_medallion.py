@@ -247,6 +247,9 @@ def mme_etl_medallion():
     reps = ingest_reps()
     eevv = eevv_staging_check()
 
+    # ingest_reps lee divipola/municipios.parquet — dependencia explícita.
+    divipola >> reps
+
     silver = build_silver()
     [sivigila, divipola] >> silver
 
