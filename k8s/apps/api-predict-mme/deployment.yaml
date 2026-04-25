@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/name: api-predict-mme
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
+        prometheus.io/port: "8001"
         prometheus.io/path: "/metrics"
     spec:
       securityContext:
@@ -35,10 +35,10 @@ spec:
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8000
+              containerPort: 8001
           env:
             - name: API_MME_MLFLOW_TRACKING_URI
-              value: "http://mlflow.mlflow:5000"
+              value: "http://mlflow-tracking.mlflow:80"
             - name: API_MME_REGISTERED_MODEL_NAME
               valueFrom:
                 configMapKeyRef:
@@ -69,12 +69,12 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8000
+              port: 8001
             initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8000
+              port: 8001
             initialDelaySeconds: 60
             periodSeconds: 30

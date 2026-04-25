@@ -11,6 +11,6 @@ spec:
     app.kubernetes.io/name: api-predict-mme
   ports:
     - name: http
-      port: 8000
-      targetPort: 8000
+      port: 8001
+      targetPort: 8001
       nodePort: 30601
