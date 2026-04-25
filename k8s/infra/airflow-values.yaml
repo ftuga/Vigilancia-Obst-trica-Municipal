@@ -115,14 +115,6 @@ scheduler:
   extraVolumeMounts:
     - name: mme-data
       mountPath: /opt/airflow/data/mme
-  # ndots:1 evita que dominios externos (3 dots) se busquen contra el search
-  # domain heredado del host WSL (sersocial.org), que hace hijack de www.datos.gov.co
-  # vía wildcard interno. Con ndots:1 los nombres con >=1 dot van directo al DNS público.
-  dnsConfig:
-    options:
-      - name: ndots
-        value: "1"
-
 triggerer:
   resources:
     requests:
@@ -138,10 +130,6 @@ triggerer:
   extraVolumeMounts:
     - name: mme-data
       mountPath: /opt/airflow/data/mme
-  dnsConfig:
-    options:
-      - name: ndots
-        value: "1"
 
 workers:
   replicas: 2
@@ -152,10 +140,6 @@ workers:
   extraVolumeMounts:
     - name: mme-data
       mountPath: /opt/airflow/data/mme
-  dnsConfig:
-    options:
-      - name: ndots
-        value: "1"
   # Bypass de `airflow celery worker` (broken upstream: no propaga --pidfile).
   # Llamamos celery CLI directo. Airflow recoge logs vía StatsD + DB.
   # Trade-off: logs en-task no se sirven al webserver vía 8793 — los DAGs corren OK,
