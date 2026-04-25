@@ -14,6 +14,7 @@ COPY proyecto_01/airflow/requirements.txt /requirements.txt
 RUN uv pip install --no-cache -r /requirements.txt
 
 COPY pyproject.toml /opt/mme/pyproject.toml
+COPY README.md /opt/mme/README.md
 COPY src /opt/mme/src
 RUN uv pip install --no-cache --no-deps -e /opt/mme
 
