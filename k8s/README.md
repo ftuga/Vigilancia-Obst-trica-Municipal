@@ -133,6 +133,27 @@ Ningún manifest del repo tiene credenciales hardcodeadas. Todo viene de `.env` 
 
 ---
 
+## Acceso a las UIs
+
+```bash
+bash k8s/scripts/show-urls.sh
+```
+
+Imprime las URLs con la IP del nodo y los NodePorts de `.env`. En WSL2 detecta la IP de `eth0` (cambia entre reboots, re-ejecutar). En Linux nativo / VPS usa `MICROK8S_NODE_IP` del `.env`.
+
+Servicios expuestos:
+
+| Servicio | NodePort default | UI |
+|---|---:|---|
+| ArgoCD | 30443 (https) | login `admin` + secret inicial |
+| Airflow webserver | 30080 | login admin + Secret `airflow-runtime` |
+| MLflow tracking | 30500 | login admin + Secret `mlflow-tracking` |
+| api-predict-mme | 30601 | OpenAPI en `/docs` |
+| frontend-mme | 30602 | mapa coroplético + ranking |
+| MinIO console | 30901 | login con `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` |
+| MinIO API (S3) | 30900 | endpoint para clientes mc/aws |
+| JupyterLab | 30888 | sin auth (solo dev local) |
+
 ## Cuotas de recursos
 
 Política: todo container tiene `requests` y `limits`. Sin excepciones (incluye sidecars, exporters, statsd, gitSync, post-install jobs).
