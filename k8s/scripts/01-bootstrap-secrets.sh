@@ -114,6 +114,10 @@ main() {
         apply_secret_literal airflow mlflow-auth \
             "MLFLOW_TRACKING_USERNAME=${mu}" \
             "MLFLOW_TRACKING_PASSWORD=${mp}"
+        # API también consume MLflow al cargar champion.
+        apply_secret_literal apps mlflow-auth \
+            "MLFLOW_TRACKING_USERNAME=${mu}" \
+            "MLFLOW_TRACKING_PASSWORD=${mp}"
     else
         echo "WARN: secret mlflow-tracking aún no existe en ns mlflow — re-ejecutar 01- después de instalar mlflow chart"
     fi
