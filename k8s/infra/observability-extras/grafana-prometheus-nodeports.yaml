@@ -1,0 +1,40 @@
+---
+# NodePort Services para exponer Grafana y Prometheus sin tocar el chart instalado
+# (kube-prom-stack los crea como ClusterIP).
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-nodeport
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: grafana-nodeport
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: kube-prom-stack
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      nodePort: 30030
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-nodeport
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: prometheus-nodeport
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: prometheus
+    prometheus: kube-prom-stack-kube-prome-prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+      nodePort: 30090

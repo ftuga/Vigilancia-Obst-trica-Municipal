@@ -96,4 +96,17 @@ print_service "pgAdmin" \
     "http://${HOST_IP}:${PGADMIN_NODEPORT:-30050}" \
     "${pgadmin_email:-admin@mme.dev} / ${pgadmin_pass:-<no-secret>}"
 
+grafana_pass=$(secret_value observability kube-prom-stack-grafana admin-password)
+print_service "Grafana" \
+    "http://${HOST_IP}:${GRAFANA_NODEPORT:-30030}" \
+    "admin / ${grafana_pass:-<no-secret>}"
+
+print_service "Prometheus" \
+    "http://${HOST_IP}:${PROMETHEUS_NODEPORT:-30090}" \
+    ""
+
+print_service "Locust" \
+    "http://${HOST_IP}:${LOCUST_NODEPORT:-30089}" \
+    ""
+
 echo

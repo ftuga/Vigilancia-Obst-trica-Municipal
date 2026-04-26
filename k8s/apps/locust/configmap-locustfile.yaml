@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-script
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: locust
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+data:
+  locustfile.py: |
+    """Load test contra api-predict-mme.
+
+    Endpoints:
+      - GET  /healthz       — liveness, debe ser <100ms.
+      - GET  /readyz        — readiness, valida champion + panel.
+      - POST /predict       — inferencia para un cod_mpio (5 dígitos zfill).
+
+    Mix realista: 10% healthz, 30% readyz, 60% predict.
+    """
+    import json
+    import random
+    from locust import HttpUser, between, task
+
+    # Sample de municipios reales (DIVIPOLA): mix de capitales + ruralidad.
+    MUNICIPIOS = [
+        "05001", "11001", "76001", "08001", "13001",  # Medellín, Bogotá, Cali, B/quilla, Cartagena
+        "47001", "68001", "73001", "50001", "20001",  # SantaMarta, Bucaramanga, Ibagué, Vva, Valledupar
+        "85001", "97001", "94001", "91001", "88001",  # ruralidad: Casanare, Vaupés, Guainía, Amazonas, S.Andrés
+    ]
+
+    class PredictUser(HttpUser):
+        wait_time = between(0.5, 2.0)
+
+        @task(1)
+        def healthz(self):
+            self.client.get("/healthz", name="healthz")
+
+        @task(3)
+        def readyz(self):
+            self.client.get("/readyz", name="readyz")
+
+        @task(6)
+        def predict(self):
+            cod = random.choice(MUNICIPIOS)
+            payload = {"cod_mpio": cod}
+            self.client.post(
+                "/predict",
+                name="predict",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
