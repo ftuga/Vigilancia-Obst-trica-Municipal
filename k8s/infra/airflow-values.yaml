@@ -161,10 +161,10 @@ workers:
         --queues=default
   resources:
     requests:
-      memory: 512Mi
-      cpu: 200m
+      memory: 1Gi
+      cpu: 500m
     limits:
-      memory: 2Gi
+      memory: 4Gi
       cpu: 2000m
   persistence:
     enabled: false
