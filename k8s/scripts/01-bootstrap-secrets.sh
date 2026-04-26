@@ -100,7 +100,7 @@ main() {
 
     # pgAdmin login + passwords de Postgres para auto-fill (opcional, no-mandatory).
     apply_secret_literal apps pgadmin-creds \
-        "email=${PGADMIN_DEFAULT_EMAIL:-admin@mme.local}" \
+        "email=${PGADMIN_DEFAULT_EMAIL:-admin@mme.dev}" \
         "password=${PGADMIN_DEFAULT_PASSWORD:-mme-pgadmin-2026}"
 
     echo

@@ -94,6 +94,6 @@ pgadmin_email=$(secret_value apps pgadmin-creds email)
 pgadmin_pass=$(secret_value apps pgadmin-creds password)
 print_service "pgAdmin" \
     "http://${HOST_IP}:${PGADMIN_NODEPORT:-30050}" \
-    "${pgadmin_email:-admin@mme.local} / ${pgadmin_pass:-<no-secret>}"
+    "${pgadmin_email:-admin@mme.dev} / ${pgadmin_pass:-<no-secret>}"
 
 echo
