@@ -1,28 +1,38 @@
-"""Endpoints de predicción individual y batch."""
+"""Endpoints de predicción individual, batch y A/B compare."""
 from __future__ import annotations
 
 import numpy as np
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.schemas import (
+    ABCompareResponse,
     BatchPredictRequest,
     PredictRequest,
     PredictResponse,
     RankingItem,
 )
 from app.services.bootstrap import classify_risk, compute_ci
-from app.services.model_store import ChampionNotFoundError
+from app.services.model_store import ChampionNotFoundError, ModelStore
 from app.services.panel_loader import filter_municipio
 
 router = APIRouter(prefix="/predict", tags=["predict"])
 
 
 def _predict_one(
-    request: Request, cod_mpio: str, anio: int | None,
+    request: Request,
+    cod_mpio: str,
+    anio: int | None,
+    *,
+    store: ModelStore | None = None,
 ) -> PredictResponse:
-    """Lógica central: filtra panel, predice, bootstrap CI, retorna DTO."""
+    """Lógica central: filtra panel, predice, bootstrap CI, retorna DTO.
+
+    Si ``store`` es None usa el champion (default).  Pasar el store
+    challenger habilita A/B testing sin duplicar lógica.
+    """
     settings = request.app.state.settings
-    store = request.app.state.model_store
+    if store is None:
+        store = request.app.state.model_store
     cache = request.app.state.panel_cache
 
     try:
@@ -131,6 +141,45 @@ async def predict_batch(
             # Skip municipios no encontrados; reporta solo los que existen
             continue
     return out
+
+
+@router.post("/compare", response_model=ABCompareResponse)
+async def predict_compare(
+    body: PredictRequest, request: Request,
+) -> ABCompareResponse:
+    """A/B compare champion vs challenger para un municipio.
+
+    Si el alias ``challenger`` no existe en el Registry, ``challenger`` queda
+    en ``null`` y los deltas también. La predicción del champion siempre
+    se devuelve.
+    """
+    champ = _predict_one(request, body.cod_mpio, body.anio)
+
+    chal_store: ModelStore = request.app.state.model_store_challenger
+    challenger: PredictResponse | None = None
+    delta_casos: float | None = None
+    delta_razon: float | None = None
+    try:
+        challenger = _predict_one(
+            request, body.cod_mpio, body.anio, store=chal_store,
+        )
+        delta_casos = round(
+            challenger.casos_mme_predichos - champ.casos_mme_predichos, 4,
+        )
+        delta_razon = round(
+            challenger.razon_mme_por_1000 - champ.razon_mme_por_1000, 4,
+        )
+    except (ChampionNotFoundError, HTTPException):
+        pass
+
+    return ABCompareResponse(
+        cod_mpio=champ.cod_mpio,
+        anio=champ.anio,
+        champion=champ,
+        challenger=challenger,
+        delta_casos_mme=delta_casos,
+        delta_razon=delta_razon,
+    )
 
 
 @router.get("/ranking", response_model=list[RankingItem])

@@ -110,3 +110,25 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded", "error"]
     service: str
     details: dict[str, str | bool | int | float]
+
+
+class ABCompareResponse(BaseModel):
+    """Comparación A/B entre champion y challenger.
+
+    Si el alias `challenger` no existe en el Registry, ``challenger`` es ``None``
+    y ``delta_*`` también. Útil para evaluar nuevos candidatos en paralelo sin
+    promover hasta validar performance en producción.
+    """
+
+    cod_mpio: str
+    anio: int
+    champion: PredictResponse
+    challenger: PredictResponse | None = None
+    delta_casos_mme: float | None = Field(
+        default=None,
+        description="challenger.casos_mme_predichos - champion.casos_mme_predichos",
+    )
+    delta_razon: float | None = Field(
+        default=None,
+        description="challenger.razon_mme_por_1000 - champion.razon_mme_por_1000",
+    )
