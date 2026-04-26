@@ -2,7 +2,7 @@
 # Aplica dnsConfig ndots:1 a los pods de Airflow.
 #
 # El chart apache/airflow 1.16.0 NO soporta dnsConfig en values.yaml.
-# Por defecto los pods heredan el search domain del host WSL (sersocial.org)
+# Por defecto los pods heredan el search domain del dominio corporativo del host WSL
 # con ndots:5, lo que hace que dominios como www.datos.gov.co resuelvan a
 # wildcards internos con cert self-signed (rompe ingesta APIs públicas).
 #
