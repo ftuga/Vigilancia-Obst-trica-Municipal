@@ -47,29 +47,24 @@ spec:
             limits:
               memory: 1Gi
               cpu: 1000m
-          # / hace SSR y fetch al API → primera carga puede pasar 1s.
-          # timeoutSeconds: 1 (default) era muy estricto y mataba el pod en cold start.
+          # Probes TCP: la home `/` hace SSR + fetch al API y excede el
+          # timeout de http probes en cold start. TCP solo verifica que
+          # Next esté escuchando — suficiente para liveness/readiness.
           startupProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3001
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 24  # ~2min para warmup
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            failureThreshold: 20
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3001
-            initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3001
-            initialDelaySeconds: 30
             periodSeconds: 30
-            timeoutSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 3
