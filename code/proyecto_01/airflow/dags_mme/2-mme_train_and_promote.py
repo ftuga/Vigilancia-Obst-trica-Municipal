@@ -31,6 +31,14 @@ except ImportError:
 REPO_ROOT = "/opt/repo"
 DATA_MME = "/opt/airflow/data/mme"
 
+# Alinear env del worker con SCRIPT_ENV: los subprocesses (_run_script /
+# _run_module) heredan SCRIPT_ENV, pero las tasks inline que importan
+# mme.paths leen directamente del entorno del worker. Sin esto,
+# MME_REPORTS resuelve a /opt/mme/reports/mme (default) y no encuentra
+# artifacts escritos por feature_selection en /opt/airflow/data/mme/reports.
+os.environ.setdefault("MME_DATA_ROOT", DATA_MME)
+os.environ.setdefault("MME_REPORTS_ROOT", f"{DATA_MME}/reports")
+
 SCRIPT_ENV = {
     **os.environ,
     "MME_DATA_ROOT": DATA_MME,
@@ -136,9 +144,23 @@ def mme_train_and_promote():
                 "gate_train": True,
             }
 
-        # 2. Construir current con mismas features que baseline
+        # 2. Construir current con mismas features que baseline.
+        # Cold start: si falta el feature_set en disco, el DAG lo regenera
+        # en la task feature_selection — saltamos drift y forzamos retrain.
         feature_cols = list(baseline_df.columns)
-        fs = load_feature_set()
+        try:
+            fs = load_feature_set()
+        except FileNotFoundError as e:
+            print(f"[check_drift] feature_set ausente — drift=True (cold start): {e}")
+            try:
+                push_drift_status(drift_detected=True)
+            except Exception as pe:  # noqa: BLE001
+                print(f"[check_drift] pushgateway falló (no-bloqueante): {pe}")
+            return {
+                "status": "no_feature_set",
+                "drift_detected": True,
+                "gate_train": True,
+            }
         panel = apply_pca(load_panel(), fs)
         missing = [c for c in feature_cols if c not in panel.columns]
         if missing:
