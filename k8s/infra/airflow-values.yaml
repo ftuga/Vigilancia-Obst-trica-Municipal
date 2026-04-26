@@ -74,12 +74,15 @@ extraEnv: |
     value: "9125"
 
 # Variables del proyecto (rutas, MLflow, MinIO) desde ConfigMap mme-env.
-# Credenciales S3/MinIO desde Secret mlflow-s3 (sync_minio del DAG 1 + futuros tasks).
+# Credenciales S3/MinIO desde Secret mlflow-s3 (sync_minio del DAG 1).
+# Credenciales MLflow tracking (basic auth) desde Secret mlflow-auth (DAG 2 train_c3).
 extraEnvFrom: |
   - configMapRef:
       name: mme-env
   - secretRef:
       name: mlflow-s3
+  - secretRef:
+      name: mlflow-auth
 
 # Webserver expuesto vía NodePort (.env: AIRFLOW_NODEPORT=30080).
 webserver:

@@ -103,6 +103,21 @@ main() {
         "email=${PGADMIN_DEFAULT_EMAIL:-admin@mme.dev}" \
         "password=${PGADMIN_DEFAULT_PASSWORD:-mme-pgadmin-2026}"
 
+    # MLflow tracking basic auth — el chart Bitnami autogenera estas creds.
+    # Las copiamos del Secret 'mlflow-tracking' (ns mlflow) al ns airflow
+    # con keys mapeadas a MLFLOW_TRACKING_USERNAME / MLFLOW_TRACKING_PASSWORD
+    # para que workers (DAG 2 train_c3) las consuman vía extraEnvFrom.
+    if $KUBECTL get secret mlflow-tracking -n mlflow >/dev/null 2>&1; then
+        local mu mp
+        mu=$($KUBECTL get secret mlflow-tracking -n mlflow -o jsonpath='{.data.admin-user}' | base64 -d)
+        mp=$($KUBECTL get secret mlflow-tracking -n mlflow -o jsonpath='{.data.admin-password}' | base64 -d)
+        apply_secret_literal airflow mlflow-auth \
+            "MLFLOW_TRACKING_USERNAME=${mu}" \
+            "MLFLOW_TRACKING_PASSWORD=${mp}"
+    else
+        echo "WARN: secret mlflow-tracking aún no existe en ns mlflow — re-ejecutar 01- después de instalar mlflow chart"
+    fi
+
     echo
     echo "Secrets aplicados:"
     for ns in airflow mlflow data apps; do
