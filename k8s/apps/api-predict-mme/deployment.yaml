@@ -56,11 +56,20 @@ spec:
                   key: AWS_SECRET_ACCESS_KEY
             - name: MLFLOW_S3_ENDPOINT_URL
               value: "http://minio.data:9000"
+            # Apunta al PVC mme-data compartido con airflow workers (lee gold + feature_set).
+            - name: MME_DATA_ROOT
+              value: "/opt/airflow/data/mme"
+            - name: MME_REPORTS_ROOT
+              value: "/opt/airflow/data/mme/reports"
           envFrom:
             - configMapRef:
                 name: mme-env
             - secretRef:
                 name: mlflow-auth
+          volumeMounts:
+            - name: mme-data
+              mountPath: /opt/airflow/data/mme
+              readOnly: true
           resources:
             requests:
               memory: 512Mi
@@ -80,3 +89,7 @@ spec:
               port: 8001
             initialDelaySeconds: 60
             periodSeconds: 30
+      volumes:
+        - name: mme-data
+          persistentVolumeClaim:
+            claimName: mme-data

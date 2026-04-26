@@ -1,0 +1,40 @@
+---
+# PV manual que apunta al MISMO hostPath del PVC mme-data del namespace airflow.
+# Permite que pods en otros namespaces (apps) lean el medallón sin duplicar storage.
+# Requiere single-node (todos los pods caen en el mismo nodo) — válido en microk8s.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mme-data-shared-apps
+  labels:
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /var/snap/microk8s/common/default-storage/airflow-mme-data-pvc-e3a11dfe-35f0-442a-9a9c-499441d05dbf
+    type: Directory
+  claimRef:
+    namespace: apps
+    name: mme-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mme-data
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+    app.kubernetes.io/component: api-data-shared
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: mme-data-shared-apps
+  resources:
+    requests:
+      storage: 5Gi
