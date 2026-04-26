@@ -179,10 +179,41 @@ Servicios expuestos:
 bash k8s/scripts/dashboard.sh
 ```
 
-Habilita el addon `dashboard` (idempotente), expone el Service como NodePort `30444` e imprime la URL con la IP del nodo + el token de login. El cert es self-signed: el browser pide "Avanzado → Continuar". Variables opcionales:
+Despliega y configura el dashboard de microk8s. Idempotente: re-ejecutable cuantas veces quieras, no rompe estado existente.
+
+Lo que hace:
+
+1. Habilita el addon `dashboard` si está disabled.
+2. Patchea el Service `kubernetes-dashboard` a `NodePort 30444`.
+3. Crea el ServiceAccount `dashboard-admin` (kube-system) con `ClusterRoleBinding cluster-admin`. **Esto es necesario:** el secret default `microk8s-dashboard-token` apunta al SA `default` sin permisos y devuelve `401 Invalid credentials` al loguear.
+4. Crea el Secret persistente `dashboard-admin-token` (tipo `kubernetes.io/service-account-token`). El JWT efímero de `kubectl create token` puede no ser aceptado por Dashboard v2.7.0; el secret persistente sí.
+5. Detecta la IP del nodo (`eth0` en WSL2 o `MICROK8S_NODE_IP` en Linux nativo) y arma la URL clickeable.
+6. **Copia el token al portapapeles del sistema** automáticamente:
+   - WSL2 → `clip.exe` (portapapeles de Windows).
+   - Linux Wayland → `wl-copy`.
+   - Linux X11 → `xclip`.
+   - Si no hay ninguno → imprime el token en pantalla para triple-click + copy.
+
+Output incluye la longitud del token (sirve de checksum: si pegás menos caracteres, perdiste algo en el copy).
+
+Tras ejecutar el script:
+
+1. Abrí la URL `https://<NODE_IP>:30444`. Cert self-signed → "Avanzado → Continuar".
+2. Elegí **Token**.
+3. `Ctrl+V` en el campo (o pegá manualmente).
+
+Si sale `401 Invalid credentials`:
+
+- Hard-refresh del login: `Ctrl+Shift+R` (limpia sesión cacheada del browser).
+- O abrí la URL en **modo incógnito**.
+- Verificá que pegaste exactamente `N` caracteres (lo imprime el script).
+
+Variables opcionales:
 
 - `DASHBOARD_NODEPORT` (default `30444`) — cambiar si choca con otro Service.
 - `KUBECTL` (default `microk8s kubectl`).
+
+> **Seguridad.** El SA `dashboard-admin` tiene `cluster-admin`. Solo apto para entornos locales (WSL/dev). En producción usar un SA con permisos restringidos por namespace.
 
 ## Cuotas de recursos
 
