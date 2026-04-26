@@ -46,6 +46,8 @@ spec:
               value: "True"
             - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
               value: "False"
+            - name: PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY
+              value: "False"
           resources:
             requests:
               memory: 256Mi
