@@ -31,7 +31,13 @@ RUN uv pip install --system --no-cache \
       'scipy>=1.11' \
       'statsmodels>=0.14.6' \
       'scikit-learn>=1.8.0' \
-      'boto3>=1.34'
+      'boto3>=1.34' \
+      'opentelemetry-distro>=0.50b0' \
+      'opentelemetry-exporter-otlp>=1.29.0' \
+      'opentelemetry-instrumentation-fastapi>=0.50b0' \
+      'opentelemetry-instrumentation-requests>=0.50b0' \
+      'opentelemetry-instrumentation-httpx>=0.50b0' \
+      'opentelemetry-instrumentation-logging>=0.50b0'
 
 # -------- runtime --------
 FROM base AS runtime
@@ -55,4 +61,7 @@ USER app:app
 
 EXPOSE 8001
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+# OpenTelemetry auto-instrumentation envuelve uvicorn → traces de FastAPI,
+# requests, httpx, logging propagados a Tempo via OTLP gRPC.
+# Variables OTEL_* se setean en el deployment k8s.
+CMD ["opentelemetry-instrument", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
