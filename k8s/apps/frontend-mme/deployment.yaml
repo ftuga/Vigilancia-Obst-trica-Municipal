@@ -27,7 +27,7 @@ spec:
         fsGroup: 1001
       containers:
         - name: frontend
-          image: luisfrontuso10/mme-frontend:20260426-3820ba0
+          image: luisfrontuso10/mme-frontend:20260426-779ce7c
           imagePullPolicy: Always
           ports:
             - name: http
