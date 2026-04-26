@@ -61,6 +61,21 @@ spec:
               value: "/opt/airflow/data/mme"
             - name: MME_REPORTS_ROOT
               value: "/opt/airflow/data/mme/reports"
+            # OpenTelemetry → Tempo (gRPC OTLP).
+            - name: OTEL_SERVICE_NAME
+              value: "api-predict-mme"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo.observability:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "none"  # ya tenemos prometheus-fastapi-instrumentator
+            - name: OTEL_LOGS_EXPORTER
+              value: "none"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment=microk8s,service.namespace=apps"
           envFrom:
             - configMapRef:
                 name: mme-env
