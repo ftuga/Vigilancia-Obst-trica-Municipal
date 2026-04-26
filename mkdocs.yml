@@ -67,8 +67,18 @@ plugins:
 nav:
   - Inicio: index.md
   - Arquitectura: architecture.md
-  - DAGs: dags.md
-  - Observabilidad: observability.md
+  - Datos:
+    - Fuentes y medallón: data-sources.md
+    - DAGs: dags.md
+  - Serving:
+    - API + Frontend: api.md
+  - Plataforma:
+    - GitOps (ArgoCD): gitops.md
+    - CI/CD: ci-cd.md
+    - Observabilidad: observability.md
+    - Seguridad: security.md
+  - Decisiones:
+    - ADRs: adrs.md
   - Runbook: runbook.md
 
 extra:

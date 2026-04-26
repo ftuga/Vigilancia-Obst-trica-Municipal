@@ -40,7 +40,7 @@ bash k8s/scripts/deploy.sh
 
 `deploy.sh` instala MicroK8s + addons si faltan, rota placeholders `changeme-*` del `.env` con creds reales, despliega los 5 charts + manifests propios + observability + ArgoCD app-of-apps, e imprime URLs y credenciales al final.
 
-Si MicroK8s acaba de ser instalado, el script termina pidiendo reabrir terminal. Volvé a correrlo.
+Si MicroK8s acaba de ser instalado, el script termina pidiendo reabrir la terminal. Vuelve a ejecutarlo después.
 
 ### Manual paso a paso
 
@@ -198,15 +198,15 @@ Output incluye la longitud del token (sirve de checksum: si pegás menos caracte
 
 Tras ejecutar el script:
 
-1. Abrí la URL `https://<NODE_IP>:30444`. Cert self-signed → "Avanzado → Continuar".
-2. Elegí **Token**.
-3. `Ctrl+V` en el campo (o pegá manualmente).
+1. Abrir la URL `https://<NODE_IP>:30444`. Cert self-signed → "Avanzado → Continuar".
+2. Elegir **Token**.
+3. `Ctrl+V` en el campo (o pegar manualmente).
 
 Si sale `401 Invalid credentials`:
 
-- Hard-refresh del login: `Ctrl+Shift+R` (limpia sesión cacheada del browser).
-- O abrí la URL en **modo incógnito**.
-- Verificá que pegaste exactamente `N` caracteres (lo imprime el script).
+- Hard-refresh del login: `Ctrl+Shift+R` (limpia la sesión cacheada del browser).
+- O abrir la URL en **modo incógnito**.
+- Verificar que se pegó exactamente `N` caracteres (lo imprime el script).
 
 Variables opcionales:
 
@@ -263,4 +263,14 @@ Confirma con `yes` antes de cada destructivo.
 
 ## Replicación a otro host
 
-Ver `code/docs/mme/runbook.md` §10 (multi-host con `microk8s join`).
+Multi-host con `microk8s join` está fuera del alcance del runbook actual ([docs/runbook.md](../docs/runbook.md) cubre single-node). Para sumar un nodo nuevo:
+
+```bash
+# en el nodo seed
+microk8s add-node            # imprime el comando join + token
+
+# en el nodo nuevo (Ubuntu 22.04 con microk8s instalado)
+microk8s join <ip>:25000/<token>/<fingerprint>
+```
+
+Tras unirse, los add-ons (`dns`, `hostpath-storage`, `ingress`) se propagan automáticamente. PVCs `microk8s-hostpath` no son RWX entre nodos — para multi-host con `mme-data` compartido cambiar a `nfs` o `longhorn` (ver ADR-005 en [docs/adrs.md](../docs/adrs.md)).

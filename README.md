@@ -14,6 +14,73 @@ Plataforma MLOps completa que predice el número esperado de casos de **Morbilid
 
 ---
 
+## Qué resuelve este sistema (dominio MME)
+
+### El problema
+
+La **Morbilidad Materna Extrema (MME)** es el conjunto de complicaciones graves que casi causan la muerte de una gestante. En Colombia se notifica al evento **549 de SIVIGILA** (INS) con razón nacional 2023 ≈ 65,5 por 1.000 nacidos vivos, pero la carga está concentrada en muy pocos territorios: la razón departamental llega a ser **2 a 6 veces el promedio** en zonas con población Wayúu, Sikuani o Embera, y la dispersión municipal es aún mayor.
+
+El **Plan de Aceleración para la Reducción de la Mortalidad Materna (PAREMM v5)** del MinSalud necesita decidir, sobre **1.122 municipios**, dónde abrir UCI obstétrica, dónde reforzar las rutas RIAS-MPN, dónde mandar brigadas extramurales y dónde fortalecer las UPGD. Hoy esa decisión se toma con boletines cualitativos del INS y juicio experto de las Direcciones Territoriales de Salud, sin una cuantificación reproducible de la vulnerabilidad estructural por municipio y sin distinguir entre **"municipio de alta vulnerabilidad real"** y **"municipio que simplemente no notifica"**.
+
+### Pregunta de investigación
+
+> ¿Es posible construir un **Índice de Vulnerabilidad Obstétrica Municipal**, explicable e interpretable, que operacionalice cuantitativamente el modelo de las **3 demoras de Thaddeus & Maine (1994)** usando exclusivamente datos públicos colombianos, para priorizar la asignación de recursos de PAREMM v5?
+
+Las features del modelo se mapean a las tres demoras del marco clínico:
+
+| Demora | Concepto | Features que aporta el modelo |
+|---|---|---|
+| **I** — decidir buscar atención | reconocimiento de signos, decisión familiar | NBI inasistencia escolar, edad media de la madre |
+| **II** — acceso al servicio | distancia, transporte, barreras económicas y culturales | NBI total, % rural, % subsidiado BDUA, omisión censal, % indígena |
+| **III** — atención adecuada y oportuna | calidad clínica, oferta hospitalaria | IPS nivel 3 disponible, camas obstétricas, UCI adulto, score de capacidad obstétrica REPS |
+
+### Encuadre ML (no es serie de tiempo)
+
+Es **regresión de conteos sobre panel municipal**, no forecasting:
+
+```
+Unidad:    (municipio, semestre)              n = 1.122 × 7 años × 2 semestres ≈ 15.708
+Target:    y_it ∼ NegBin(μ_it, θ)
+log μ_it = log(NV_esperados_it) + xᵢₜ·β
+Razón:     y_it · 1.000 / NV_esperados_it     [casos MME por 1.000 nacidos vivos]
+```
+
+El modelo predice **la tasa esperada dado el perfil estructural actual**, no qué pasará el próximo semestre. La diferencia entre razón observada y razón predicha es lo que vale operacionalmente: residual positivo grande sugiere exceso real o subregistro súbito; residual negativo sostenido sugiere municipio silencioso.
+
+### Familia de modelos y selección
+
+| Modelo | Rol | Por qué |
+|---|---|---|
+| **GLM Poisson** con offset `log(NV)` | baseline interpretable | Estándar epidemiológico INS/OMS — todo boletín se reporta así |
+| **GLM Negative Binomial** | baseline robusto | Si `dispersion_ratio > 1,5` (var > mean), reemplaza al Poisson |
+| **LightGBM Poisson + Optuna** | challenger no-lineal | Captura interacciones (NBI alto × sin IPS nivel 3) |
+| **Clayton-Kaldor Empirical Bayes** | suavizamiento previo | Obligatorio en municipios con NV < 50/año |
+
+El champion se promueve por gate combinado en MLflow (`new ≥ prev × 0,95 OR new ≥ 0,65` sobre Spearman departamental), con backtest rolling 4 ventanas (`cv_spearman = 0,073`) confirmando estabilidad temporal.
+
+### Qué entrega el sistema (lo que ve el usuario en la API y el frontend)
+
+| Output | Decisión que soporta | Usuario |
+|---|---|---|
+| `razon_predicha(municipio)` + IC bootstrap 90% | Ranking territorial por vulnerabilidad | PAREMM — asignación de recursos |
+| Residual = observada − predicha | Detección de excesos reales o subregistro inesperado | INS Vigilancia + DTS |
+| SHAP global (`/model/info`) | Priorización de políticas: ¿reducir NBI o abrir UCI-O? | MinSalud policy |
+| SHAP por municipio (drill-down `/mme/municipio/[cod]`) | Diagnóstico cualitativo del perfil de vulnerabilidad | Direcciones Territoriales |
+| Ranking departamental ordenado | Vista priorizada para gestión territorial | DTS, secretarías de salud |
+
+### Resultado actual (champion en producción)
+
+- **Spearman departamental sobre test 2022** = **0,836** (gate Go/No-Go ≥ 0,30, ampliamente superado).
+- **Backtest rolling** 2019–2022, cv = 0,073 → modelo estable temporalmente.
+- **Precision@top-50 municipios** = 0,24 — útil como ranking pero limitado para decisiones individuales (por construcción: hay subregistro).
+- Interpretación operacional: si MinSalud toma los **top-10 departamentos** del ranking predicho, **≈9 de 10** coinciden con el top-10 real observado en 2022.
+
+> **Disclaimer ecological fallacy.** El modelo opera a nivel agregado municipio × semestre. **No predice riesgo individual de una gestante.** Un municipio con alta vulnerabilidad promedio no implica que toda gestante en ese municipio esté en riesgo alto. Es una herramienta de asignación de recursos, no un clasificador clínico.
+
+Detalle metodológico completo: [code/docs/mme/ml-problem-definition.md](code/docs/mme/ml-problem-definition.md) y [code/docs/mme/model-evaluation.md](code/docs/mme/model-evaluation.md).
+
+---
+
 ## Arquitectura del sistema
 
 A diferencia del repo de referencia (3 máquinas), esta solución corre sobre **microk8s single-node** (extensible a multi-host con `microk8s join`), con 5 namespaces lógicos:
@@ -511,7 +578,9 @@ microk8s kubectl patch app <nombre> -n argocd --type merge -p '{"operation":{"sy
 - **CI/CD**: [docs/ci-cd.md](docs/ci-cd.md)
 - **Observabilidad**: [docs/observability.md](docs/observability.md)
 - **Runbook**: [docs/runbook.md](docs/runbook.md)
-- **Documentación académica**: [code/docs/mme/](code/docs/mme/) (methodology, results, limitations, features-spec, ml-problem-definition).
+- **Seguridad**: [docs/security.md](docs/security.md)
+- **ADRs**: [docs/adrs.md](docs/adrs.md)
+- **Documentación académica**: [code/docs/mme/](code/docs/mme/) — `ml-problem-definition.md`, `model-evaluation.md`, `features-spec-v1.md`, `mlops-plan.md`, `dane-eevv-procedure.md`, `NEXT-STEPS.md`.
 
 ---
 

@@ -173,7 +173,7 @@ Mapeo a las 3 demoras de Thaddeus & Maine (1994):
 ### 5.3 Operacionales
 
 - **Data:** 100% pública, sin trámites. Fuente principal SIVIGILA `4hyg-wa9d`. EEVV por descarga manual (procedimiento documentado en `docs/mme/dane-eevv-procedure.md`).
-- **Reproducibilidad:** pipeline completo debe correr end-to-end en el stack `proyecto_01/` (Airflow + MLflow + MinIO + Postgres + Prometheus + Grafana).
+- **Reproducibilidad:** el pipeline completo debe correr end-to-end sobre el cluster microk8s + ArgoCD (Airflow + MLflow + MinIO + Postgres + Prometheus + Grafana + Loki + Tempo). Bootstrap en [`docs/runbook.md`](../../../docs/runbook.md).
 - **Ventana temporal real:** **2016-2022** (el dataset SIVIGILA publicado no cubre 2023-2024 aún).
 
 ---

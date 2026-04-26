@@ -48,17 +48,19 @@ GEOJSON_URL="https://…/colombia-departamentos.geojson" bash scripts/fetch-geoj
 
 ```bash
 npm install
+export API_PREDICT_MME_URL=http://<NODE_IP>:30601    # API en el cluster
 npm run dev   # http://localhost:3001
 ```
 
-Requiere `api_predict_mme` corriendo en `http://localhost:8001` (o setear
-`API_PREDICT_MME_URL`).
+Si la API corre local en `http://localhost:8001`, esa también vale como `API_PREDICT_MME_URL`.
 
-## En el compose
+## En el cluster (k8s)
+
+Servicio expuesto como NodePort `30602` + Ingress `mme.localhost` por la app `frontend-mme` (namespace `apps`). Manifests en `k8s/apps/frontend-mme/`. Server Actions resuelven `api-predict-mme.apps:8000` por DNS interno — el browser nunca toca la API directamente.
 
 ```bash
-docker compose up -d frontend_mme
-# abrir http://localhost:3001
+microk8s kubectl get pods -n apps -l app.kubernetes.io/name=frontend-mme
+# UI: http://<NODE_IP>:30602
 ```
 
 ## Notas de seguridad

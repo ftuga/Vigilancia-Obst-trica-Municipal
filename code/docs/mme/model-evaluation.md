@@ -1,9 +1,10 @@
 # Evaluación C3 — Vulnerabilidad Obstétrica Municipal
 
 **Modelo ganador**: LightGBM Poisson + Optuna TPE (50 trials, MedianPruner)
-**Run exitoso**: DAG `2-mme_train_and_promote` — ejecución 2026-04-23
-**Métrica reportada**: Spearman ρ (departamento) = **0.834** sobre test (2022)
+**Pipeline**: DAG `2-mme_train_and_promote` (Airflow en microk8s)
+**Métrica reportada**: Spearman ρ (departamento) = **0.836** sobre test (2022)
 **Gate Go/No-Go**: ≥ 0.30 → ampliamente superado
+**Estabilidad temporal**: backtest rolling 4 ventanas (2019-2022), `cv_spearman = 0.073`
 
 ---
 
@@ -39,10 +40,12 @@ donde `y_it` = casos MME en el municipio `i`, semestre `t`, `x_it` son las featu
 
 | Métrica | Qué mide | Valor test |
 |---|---|---|
-| `spearman_dpto` | Orden por departamento | **0.834** |
+| `spearman_dpto` | Orden por departamento | **0.836** |
 | `precision_at_50` | ¿El top-50 predicho contiene los top-50 reales? | 0.24 |
 | `mae_razon` | Error absoluto en razón por 1000 habitantes | ~0.6 |
 | `r2_log` | R² sobre `log(1+y)` — robusto a escala | ~0.42 |
+
+> El run específico en MLflow puede mostrar variaciones menores (`test_spearman_dpto` ~0.832 según seed y versión del gold). El **0.836** es la métrica del champion vigente — verificar siempre `model.info` o el alias `@champion` en el Registry.
 
 ---
 
@@ -59,7 +62,7 @@ donde `y_it` = casos MME en el municipio `i`, semestre `t`, `x_it` son las featu
 | **0.8 – 0.95** | **Muy fuerte — priorización casi coincidente con el real** |
 | > 0.95 | Sospechoso (leakage, overfitting, o target trivial) |
 
-**0.834 cae en "muy fuerte"**: el ranking departamental predicho coincide casi exactamente con el ranking real observado en 2022. Interpretación operacional: si MinSalud toma los **top-10 departamentos** según el modelo, aproximadamente **9 de los 10** están efectivamente en el top-10 real.
+**0.836 cae en "muy fuerte"**: el ranking departamental predicho coincide casi exactamente con el ranking real observado en 2022. Interpretación operacional: si MinSalud toma los **top-10 departamentos** según el modelo, aproximadamente **9 de los 10** están efectivamente en el top-10 real.
 
 ### Disclaimer — falacia ecológica
 
@@ -75,9 +78,10 @@ El target actual proviene exclusivamente de SIVIGILA 549 (notificación). Los ca
 
 ### Acceso UI
 
-- **URL local**: http://localhost:5000
+- **MLflow**: `http://<NODE_IP>:30500` (basic auth con Secret `mlflow-tracking`)
 - **Experimento**: `mme_vulnerability_v1`
-- **Artifacts backend**: MinIO bucket `mlflows3` (http://localhost:9001, cred en `.env`)
+- **Registry model**: `mme_vulnerability_baseline` con alias `@champion`
+- **Artifacts backend**: MinIO bucket `mlflows3` (`http://<NODE_IP>:30901` consola, `http://<NODE_IP>:30900` API S3)
 
 ### Tags relevantes por run
 
@@ -88,17 +92,27 @@ El target actual proviene exclusivamente de SIVIGILA 549 (notificación). Los ca
 | `regime` | `v1_refactor` (post-migración src/) |
 | `family` | `negbin_glm` \| `lgbm_poisson` |
 
-### Reconstruir un run localmente
+### Reconstruir un run
+
+Dentro del cluster (Airflow ya configurado contra MLflow + MinIO):
 
 ```bash
-# Desde el repo root
-docker compose -f proyecto_01/compose.yaml exec airflow-scheduler \
-  python -m mme.cli.train \
-    --dataset-cycle 2026-04-23 \
-    --n-trials 50
+SCHED=$(microk8s kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[0].metadata.name}')
+microk8s kubectl exec -n airflow "$SCHED" -c scheduler -- \
+  python -m mme.cli.train --dataset-cycle 2026-04-23 --n-trials 50
 ```
 
-Los artifacts (modelo, SHAP summary, feature importance, scaler PCA) se logean en el mismo experimento.
+Local (requiere variables de tracking apuntando al cluster):
+
+```bash
+cd code
+export MLFLOW_TRACKING_URI=http://<NODE_IP>:30500
+export AWS_ACCESS_KEY_ID=...; export AWS_SECRET_ACCESS_KEY=...
+export MLFLOW_S3_ENDPOINT_URL=http://<NODE_IP>:30900
+uv run mme-train-c3 --dataset-cycle 2026-04-23 --n-trials 50
+```
+
+Los artifacts (modelo, SHAP summary, feature importance, scaler PCA) se loguean en el mismo experimento.
 
 ---
 
@@ -107,11 +121,12 @@ Los artifacts (modelo, SHAP summary, feature importance, scaler PCA) se logean e
 | Etapa | Artefacto |
 |---|---|
 | Exploración | `proyecto_01/jupyterlab/notebook/mme/c3_analysis.ipynb` |
-| Módulos productivos | `src/mme/` (paquete instalable) |
-| Tests | `tests/mme/unit/` (14/14 passing) |
-| CLI | `python -m mme.cli.train` (typer) |
-| DAG | `proyecto_01/airflow/dags_mme/2-mme_train_and_promote.py` |
-| Registry | MLflow `mme_vulnerability_baseline` (champion/challenger, pendiente promote_c3) |
+| Módulos productivos | `src/mme/` (paquete instalable `mme`) |
+| Tests | `tests/mme/unit/` |
+| CLI | `mme-train-c3` (typer entry point) |
+| DAG | `proyecto_01/airflow/dags_mme/2-mme_train_and_promote.py` (cargado vía gitSync en microk8s) |
+| Registry | MLflow `mme_vulnerability_baseline` con alias `@champion` (promovido por `mme.tracking.mlflow_ops.promote_champion`) |
+| Serving | API `api-predict-mme` (FastAPI, NodePort 30601) |
 
 ---
 

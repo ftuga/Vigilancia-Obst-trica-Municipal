@@ -7,7 +7,7 @@ Pasos para levantar el stack completo en un nodo microk8s nuevo.
 - Ubuntu 22.04+ (o WSL2).
 - microk8s 1.28+ con addons: `dns`, `hostpath-storage`, `metallb`, `metrics-server`, `ingress`.
 - `git`, `bash`, `kubectl` (alias del microk8s).
-- Acceso a `dockerhub.io/luisfrontuso10/*` (público) o credenciales propias.
+- Acceso a `docker.io/luisfrontuso10/*` (público) o credenciales propias.
 
 ## 1. Clonar repo y completar `.env`
 

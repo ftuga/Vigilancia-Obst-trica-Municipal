@@ -1,13 +1,15 @@
 # Arquitectura MLOps — Proyecto MME Colombia
 
-> Cómo se implementa el problema ML definido en `ml-problem-definition.md` sobre la infra existente `proyecto_01/`.
-> Versión 1.0 · 2026-04-23
+> Cómo se implementa el problema ML definido en [`ml-problem-definition.md`](ml-problem-definition.md).
+> Versión 1.1 · 2026-04-26 (migración del stack Compose `proyecto_01/` → microk8s + ArgoCD).
+
+> **Nota.** Las referencias a `proyecto_01/` y `docker compose` en este documento describen el **stack histórico**. El stack productivo actual corre sobre microk8s (ver [`docs/runbook.md`](../../../docs/runbook.md) y [`k8s/README.md`](../../../k8s/README.md)). El diseño de DAGs, registry, métricas y métodos descritos abajo se mantiene; solo cambia la capa de despliegue. Los DAGs siguen viviendo en `code/proyecto_01/airflow/dags_mme/` porque Airflow los carga vía sidecar `gitSync`.
 
 ---
 
 ## 1. Principios
 
-1. **Reproducibilidad:** todo el pipeline corre en `docker compose up` desde cero.
+1. **Reproducibilidad:** todo el pipeline se levanta desde cero con `bash k8s/scripts/deploy.sh` (microk8s + ArgoCD app-of-apps). El stack histórico `docker compose up` en `proyecto_01/` queda como referencia.
 2. **Degradación graceful:** fuentes opcionales (EEVV, étnia) degradan a NULL sin romper.
 3. **Observabilidad por defecto:** cada DAG emite métricas a Prometheus; cada run loggea a MLflow; cada fallo dispara `_callbacks.on_failure_callback` con detalle suficiente para diagnóstico.
 4. **Audit trail:** manifests JSON con SHA256 por cada parquet bronze/silver/gold. Cambios de schema bumps `feature_spec_version`.

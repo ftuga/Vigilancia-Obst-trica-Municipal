@@ -37,17 +37,20 @@ Sistema MLOps para predecir vulnerabilidad obstétrica municipal. Stack desplega
 
 NodePorts expuestos al host:
 
-| Servicio | Puerto | URL local |
+| Servicio | Puerto | URL |
 |---|---:|---|
-| airflow webserver | 30080 | http://node-ip:30080 |
-| api-predict-mme | 30601 | http://node-ip:30601 |
-| frontend-mme | 30602 | http://node-ip:30602 |
-| mlflow tracking | 30500 | http://node-ip:30500 |
-| minio API | 30900 | http://node-ip:30900 |
-| minio console | 30901 | http://node-ip:30901 |
-| jupyterlab | 30888 | http://node-ip:30888 |
-| Grafana (addon) | 3000 | port-forward |
-| ArgoCD (addon) | 8080 | port-forward |
+| airflow webserver | 30080 | `http://<NODE_IP>:30080` |
+| api-predict-mme | 30601 | `http://<NODE_IP>:30601` |
+| frontend-mme | 30602 | `http://<NODE_IP>:30602` |
+| mlflow tracking | 30500 | `http://<NODE_IP>:30500` |
+| minio API | 30900 | `http://<NODE_IP>:30900` |
+| minio console | 30901 | `http://<NODE_IP>:30901` |
+| jupyterlab | 30888 | `http://<NODE_IP>:30888` |
+| pgadmin | 30050 | `http://<NODE_IP>:30050` |
+| ArgoCD | 30443 | `https://<NODE_IP>:30443` |
+| Grafana | 30030 | `http://<NODE_IP>:30030` |
+| Prometheus | 30090 | `http://<NODE_IP>:30090` |
+| Locust | 30089 | `http://<NODE_IP>:30089` |
 
 ---
 
@@ -269,10 +272,10 @@ Single source of truth para values (este repo) sin acoplar al chart repo.
 
 ## 7. Referencias
 
-- `code/docs/mme/runbook.md` — despliegue desde cero
-- `code/docs/mme/methodology.md` — decisiones del modelo
-- `code/docs/mme/limitations.md` — limitaciones del modelo
-- `k8s/README.md` — layout, cuotas de recursos, generación de credenciales
-- `k8s/argo-cd/README.md` — App-of-Apps + sync policies
+- [`docs/runbook.md`](runbook.md) — despliegue desde cero sobre microk8s
+- [`code/docs/mme/model-evaluation.md`](https://github.com/ftuga/Vigilancia-Obst-trica-Municipal/blob/main/code/docs/mme/model-evaluation.md) — decisiones del modelo y métricas
+- [`code/docs/mme/ml-problem-definition.md`](https://github.com/ftuga/Vigilancia-Obst-trica-Municipal/blob/main/code/docs/mme/ml-problem-definition.md) §5/§7/§8 — restricciones, fuera de scope, riesgos
+- [`k8s/README.md`](https://github.com/ftuga/Vigilancia-Obst-trica-Municipal/blob/main/k8s/README.md) — layout, cuotas de recursos, generación de credenciales
+- [`k8s/argo-cd/README.md`](https://github.com/ftuga/Vigilancia-Obst-trica-Municipal/blob/main/k8s/argo-cd/README.md) — App-of-Apps + sync policies
 - `.github/workflows/build-and-push.yml` — CI build matrix
 - `.github/workflows/bump-image-tags.yml` — CD bump tags + commit

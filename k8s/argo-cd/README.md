@@ -6,7 +6,7 @@ los recursos en el cluster.
 ## Patrón
 
 `app-of-apps.yaml` es la Application raíz. Apunta a `k8s/argo-cd/apps/` y
-desde ahí descubre las 6 Applications hijas que ArgoCD gestiona:
+desde ahí descubre las Applications hijas que ArgoCD gestiona:
 
 | Application | Tipo | Source | Destino |
 |---|---|---|---|
@@ -14,9 +14,14 @@ desde ahí descubre las 6 Applications hijas que ArgoCD gestiona:
 | `postgres-mlflow` | Helm chart | bitnami/postgresql 18.6.2 | ns mlflow |
 | `minio` | Helm chart | minio/minio 5.4.0 | ns data |
 | `airflow` | Helm chart | apache-airflow/airflow 1.16.0 | ns airflow |
+| `airflow-pvcs` | Manifests propios | k8s/apps/airflow-pvcs/ | ns airflow |
 | `mlflow` | Helm chart | bitnami/mlflow 5.1.17 | ns mlflow |
 | `api-predict-mme` | Manifests propios | k8s/apps/api-predict-mme/ | ns apps |
 | `frontend-mme` | Manifests propios | k8s/apps/frontend-mme/ | ns apps |
+| `jupyterlab` | Manifests propios | k8s/apps/jupyterlab/ | ns apps |
+| `pgadmin` | Manifests propios | k8s/apps/pgadmin/ | ns apps |
+| `locust` | Manifests propios | k8s/apps/locust/ | ns observability |
+| `observability-extras` | Manifests propios | k8s/apps/observability-extras/ | ns observability |
 
 ## Sync policies
 
@@ -54,7 +59,7 @@ Después de tener Secrets + ConfigMaps + DBs auxiliares (mlflow_auth) creados:
 microk8s kubectl apply -f k8s/argo-cd/app-of-apps.yaml
 ```
 
-ArgoCD detectará la app raíz, creará las 7 Applications hijas, y empezará a
+ArgoCD detectará la app raíz, creará las Applications hijas, y empezará a
 sincronizar. Verificar:
 
 ```bash
@@ -75,12 +80,13 @@ microk8s kubectl -n argocd get secret argocd-initial-admin-secret \
 ## Limitaciones conocidas
 
 - **Auth password de Airflow / MLflow**: el admin user se crea fuera de
-  ArgoCD (post-install, ver `code/docs/mme/runbook.md` §6). ArgoCD ignora
-  diffs en el Secret `airflow-runtime` porque sería ruido constante.
+  ArgoCD (post-install, ver [docs/runbook.md](../../docs/runbook.md) §6).
+  ArgoCD ignora diffs en el Secret `airflow-runtime` porque sería ruido
+  constante.
 - **Imagen tags de api-predict-mme y frontend-mme**: las bumpea el workflow
   GHA `bump-image-tags.yml` después de cada build exitoso. ArgoCD detecta
   el commit en main y sync automated reduce el cambio al cluster.
-- **Imagen tag custom de airflow/mlflow** (cuando exista en B9): no se
-  bumpea automáticamente. Para activarla: editar `k8s/infra/airflow-values.yaml`
-  con `defaultAirflowRepository: luisfrontuso10/mme-airflow` + tag, y push.
-  ArgoCD detectará el cambio y sync via helm.
+- **Imagen tag custom de airflow/mlflow**: no se bumpea automáticamente.
+  Para activarla: editar `k8s/infra/airflow-values.yaml` con
+  `defaultAirflowRepository: luisfrontuso10/mme-airflow` + tag, y push.
+  ArgoCD detecta el cambio y sincroniza via helm.

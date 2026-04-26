@@ -48,7 +48,20 @@ api_predict_mme/
 ```bash
 cd api_predict_mme
 uv sync
+export MLFLOW_TRACKING_URI=http://<NODE_IP>:30500
+export MLFLOW_TRACKING_USERNAME=admin
+export MLFLOW_TRACKING_PASSWORD=...
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export MLFLOW_S3_ENDPOINT_URL=http://<NODE_IP>:30900
 uvicorn app.main:app --reload --port 8001
 ```
 
-En docker-compose: `docker compose up -d api_predict_mme`, disponible en http://localhost:8001.
+## En el cluster (k8s)
+
+Servicio expuesto como NodePort `30601` por la app `api-predict-mme` (namespace `apps`). Manifests en `k8s/apps/api-predict-mme/`. Tags de imagen los bumpea el workflow `bump-image-tags.yml` tras cada build exitoso → ArgoCD sincroniza.
+
+```bash
+microk8s kubectl get pods -n apps -l app.kubernetes.io/name=api-predict-mme
+curl http://<NODE_IP>:30601/readyz
+```

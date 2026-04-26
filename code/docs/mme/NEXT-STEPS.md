@@ -1,6 +1,6 @@
 # MME — próximos pasos (retomar desde aquí)
 
-**Último checkpoint**: 2026-04-24 — Champion v2 en Registry (Spearman 0.834), drift Evidently funcionando, API `api_predict_mme` sirviendo en :8001, stack en `vigilancia-obstetrica-municipal/`.
+**Último checkpoint**: 2026-04-26 — Champion en Registry (Spearman dpto 0.836, backtest cv 0.073), drift Evidently funcionando, API `api-predict-mme` y frontend `frontend-mme` sirviendo en el cluster microk8s, stack completo bajo ArgoCD (`mme-root` app-of-apps).
 
 ---
 
@@ -15,7 +15,11 @@
 | Loop de promoción (P1) | ✅ `mlflow_ops.promote_champion()` con gate combinado. Aliases MLflow 3.x |
 | Drift real (P2) | ✅ `mme.drift.evidently_runner` + PSI/KS + HTML. Baseline adjunto al champion |
 | `api_predict_mme` (F-001) | ✅ FastAPI:8001 con ModelStore + PanelCache + bootstrap residual. 13/13 tests |
-| MLflow Registry `mme_vulnerability_baseline` | ✅ champion v2 @ Spearman 0.834 |
+| MLflow Registry `mme_vulnerability_baseline` | ✅ champion vigente @ Spearman dpto 0.836 |
+| Frontend `frontend-mme` (F-002) | ✅ Next.js 14 + mapa coroplético + ranking + drill-down muni; NodePort 30602 |
+| Migración a microk8s + ArgoCD | ✅ 12 Applications gestionadas, GitOps puro (sin `kubectl apply` manual) |
+| CI/CD (build-and-push, bump-image-tags, docs) | ✅ 3 workflows verdes; deploy ~5–7 min push→prod |
+| Observabilidad full-stack | ✅ Prometheus + Grafana + Loki + Tempo + Pushgateway + Locust |
 | Prometheus rules MME + scrape api_predict_mme | ✅ alertas + métricas API |
 | Grafana dashboards | ✅ 3 dashboards MME |
 | Pushgateway wiring | ✅ DAG 2 publica drift + métricas modelo |
@@ -41,12 +45,12 @@
 
 - [x] **MME-E.2 · Evidently + PSI/KS** — `src/mme/drift/evidently_runner.py` con `compute_psi()` quantile-bins + Laplace smoothing. DAG 2 `check_drift` real: load baseline del champion → run_drift_check → push PSI/KS. Validado live: psi_max=0.0000476 (sin drift) → ShortCircuit correcto.
 
-### 🎯 Prioridad 3 — Fase MME-F (en curso)
+### ✅ Prioridad 3 — Fase MME-F (CERRADA en cluster k8s)
 
-- [x] **F-001 · api_predict_mme** (backend) — FastAPI:8001 con `/predict/municipio`, `/predict/batch`, `/predict/ranking`, `/model/info`, `/model/reload`, health+metrics. ModelStore hot-swap, PanelCache TTL, residual bootstrap (90% CI). Smoke live OK: Medellín 459 casos.
-- [ ] **F-002 · frontend_mme** Next.js 14 + ruta `/mme` — mapa coroplético Colombia con razón MME predicha. Tailwind v3 + shadcn/ui, Recharts para serie temporal. **SIGUIENTE ARRANQUE.**
-- [ ] **F-005** Re-agregar dashboards Grafana `api_predict_mme` + `frontend_mme` cuando levanten.
-- [ ] **F-006** Disclaimer ecological fallacy en el dashboard (texto fijo + link a `docs/mme/model-evaluation.md` §3).
+- [x] **F-001 · api-predict-mme** (backend) — FastAPI con `/predict/municipio`, `/predict/batch`, `/predict/ranking`, `/predict/compare` (A/B champion vs challenger), `/model/info`, `/model/reload`, health+metrics. ModelStore hot-swap, PanelCache TTL, residual bootstrap (90% CI). Smoke live OK: Medellín 459 casos. Sirviendo en NodePort 30601.
+- [x] **F-002 · frontend-mme** Next.js 14 + ruta `/mme` — mapa coroplético Colombia, ranking departamental, drill-down municipal con SHAP. Tailwind + Recharts. NodePort 30602 + Ingress `mme.localhost`.
+- [x] **F-005** Dashboards Grafana `api-predict-mme` + `frontend-mme` provisionados como ConfigMaps con label `grafana_dashboard=1`.
+- [x] **F-006** Disclaimer ecological fallacy fijo en `/mme` y en `/mme/municipio/[cod]`.
 
 ### 🎯 Prioridad 4 — Rigor metodológico (pendiente)
 
@@ -137,19 +141,27 @@
 ## 🚀 Comando rápido para retomar
 
 ```bash
-# 1. Levantar stack
-cd proyecto_01 && docker compose up -d
+# 1. Levantar stack (cluster microk8s + ArgoCD app-of-apps)
+cp k8s/.env.example k8s/.env   # llenar secrets
+bash k8s/scripts/deploy.sh
 
-# 2. Verificar servicios
-docker compose ps
+# 2. Verificar pods + URLs
+microk8s kubectl get pods -A
+bash k8s/scripts/show-urls.sh
 
-# 3. Abrir UIs
-# - Airflow: http://localhost:8080
-# - MLflow:  http://localhost:5000
-# - Grafana: http://localhost:3000  (admin/admin)
-# - MinIO:   http://localhost:9001
-# - Jupyter: http://localhost:8888
+# 3. Abrir UIs (reemplazar <NODE_IP> con la IP del nodo)
+# - Airflow:  http://<NODE_IP>:30080
+# - MLflow:   http://<NODE_IP>:30500
+# - Grafana:  http://<NODE_IP>:30030  (admin/prom-operator)
+# - MinIO:    http://<NODE_IP>:30901
+# - Jupyter:  http://<NODE_IP>:30888
+# - API:      http://<NODE_IP>:30601/docs
+# - Frontend: http://<NODE_IP>:30602/mme
 
-# 4. Re-entrenar manualmente (si hace falta)
-docker compose exec airflow-scheduler airflow dags trigger 2-mme_train_and_promote
+# 4. Re-entrenar manualmente
+SCHED=$(microk8s kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[0].metadata.name}')
+microk8s kubectl exec -n airflow "$SCHED" -c scheduler -- \
+  airflow dags trigger 2-mme_train_and_promote
 ```
+
+Detalle de bootstrap del cluster: [`docs/runbook.md`](../../../docs/runbook.md).

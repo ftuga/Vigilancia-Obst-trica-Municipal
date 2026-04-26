@@ -1,7 +1,8 @@
 # DAGs MME — `dags_mme/`
 
-Pipelines Airflow específicos del proyecto MME Colombia.
-Arquitectura completa en `docs/mme/mlops-plan.md`.
+Pipelines Airflow del proyecto MME Colombia. Aunque el directorio cuelga del stack histórico `proyecto_01/`, **estos DAGs son la fuente de verdad activa**: Airflow en el cluster microk8s los carga vía sidecar `gitSync` (path `code/proyecto_01/airflow/dags_mme`, ver `k8s/infra/airflow-values.yaml`).
+
+Arquitectura del pipeline ML en [`docs/mme/mlops-plan.md`](../../docs/mme/mlops-plan.md). Despliegue del cluster en [`docs/runbook.md`](../../../../docs/runbook.md).
 
 ## DAGs actuales
 
@@ -20,32 +21,31 @@ Arquitectura completa en `docs/mme/mlops-plan.md`.
 - **/opt/repo es RO:** cualquier escritura va a `/opt/airflow/data/mme` (montado RW).
 - **Callbacks:** importar `on_failure_callback` desde `_callbacks.py`. Usa Pushgateway si disponible y webhook opcional vía `MME_ALERTS_WEBHOOK`.
 
-## Validación local
+## Validación local (sin cluster)
 
 ```bash
-# Syntax
-uv run python -c "import sys; sys.path.insert(0, 'proyecto_01/airflow/dags_mme'); \
-  exec(open('proyecto_01/airflow/dags_mme/1-mme_etl_medallion.py').read())"
-
-# Via Airflow CLI dentro del scheduler
-docker exec proyecto_01-airflow-scheduler-1 airflow dags list-import-errors
-docker exec proyecto_01-airflow-scheduler-1 airflow dags test 1-mme_etl_medallion 2026-04-23
+# Syntax-check standalone
+uv run python -c "import sys; sys.path.insert(0, 'code/proyecto_01/airflow/dags_mme'); \
+  exec(open('code/proyecto_01/airflow/dags_mme/1-mme_etl_medallion.py').read())"
 ```
 
-## Permisos de `data/mme/` (importante)
-
-El worker Airflow corre como UID 50000 (ver compose `user: "${AIRFLOW_UID:-50000}:0"`).
-El mount `../data/mme:/opt/airflow/data/mme` debe ser **escribible por UID 50000**.
-
-Si el host monta desde `data/mme/` owned por el usuario humano (uid típico 1000), el
-primer DAG run falla con `Cannot open file ... Permission denied`. Fix una sola vez:
+## Validación dentro del cluster
 
 ```bash
-docker run --rm -v $PWD/data/mme:/target alpine \
-  sh -c 'chown -R 50000:0 /target && chmod -R 775 /target'
+SCHED=$(microk8s kubectl get pods -n airflow -l component=scheduler -o jsonpath='{.items[0].metadata.name}')
+
+# Errores de import
+microk8s kubectl exec -n airflow "$SCHED" -c scheduler -- airflow dags list-import-errors
+
+# Test de un DAG run sin schedule
+microk8s kubectl exec -n airflow "$SCHED" -c scheduler -- airflow dags test 1-mme_etl_medallion 2026-04-26
 ```
 
-Tras esto, el worker puede escribir y el humano sigue pudiendo leer (775 + grupo 0).
+El sidecar `gitSync` re-clona el repo cada 60s — los cambios pusheados a `main` aparecen en el scheduler sin restart.
+
+## Permisos del PVC `mme-data`
+
+El worker Airflow corre como UID 50000. El PVC `mme-data` (RWX, montado en `/opt/airflow/data/mme`) debe ser escribible por ese UID. El chart Apache Airflow lo gestiona vía `securityContext.fsGroup: 50000` en `k8s/infra/airflow-values.yaml`. Si tras un cambio de chart aparecen errores `Permission denied`, verificar ese campo y los `accessModes` del PVC con `microk8s kubectl describe pvc mme-data -n airflow`.
 
 ## Buckets MinIO usados
 

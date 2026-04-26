@@ -18,9 +18,9 @@ graph LR
     end
 
     subgraph "UI"
-        GR[Grafana<br/>:30030]
-        PRUI[Prometheus UI<br/>:30090]
-        LCUI[Locust<br/>:30089]
+        GR[Grafana<br/>30030]
+        PRUI[Prometheus UI<br/>30090]
+        LCUI[Locust<br/>30089]
     end
 
     API -->|/metrics| PR
@@ -45,7 +45,7 @@ graph LR
 
 - 16 targets scrapeados (kube-state-metrics, kubelet, apiserver, node-exporter, postgres-exporter x2, MinIO, MLflow, FastAPI, scheduler, triggerer, workers, etc).
 - Retención default 15 días.
-- UI: `http://NODE:30090` (sin auth).
+- UI: `http://<NODE_IP>:30090` (sin auth).
 
 Queries útiles:
 
@@ -64,7 +64,7 @@ sum(container_memory_working_set_bytes{namespace="apps"}) by (pod)
 
 ## Grafana
 
-- URL: `http://NODE:30030` · admin/`prom-operator`.
+- URL: `http://<NODE_IP>:30030` · admin/`prom-operator`.
 - Dashboards default de **kube-prom-stack**: cluster, nodes, pods, namespaces.
 - **Datasources** preconfigurados: Prometheus, Loki, Tempo (correlación cross-pillar).
 
@@ -80,7 +80,7 @@ Distributed tracing OTLP. La API FastAPI auto-instrumentada con `opentelemetry-d
 
 1. Grafana → Explore → Tempo.
 2. Search service `api-predict-mme`.
-3. Click un trace → ves el árbol completo: request → MLflow API → S3 download → DB query → response.
+3. Abrir un trace para ver el árbol completo: request → MLflow API → S3 download → DB query → response.
 
 ## Loki
 
@@ -93,7 +93,7 @@ Logs de todos los pods via Promtail DaemonSet. Filtros LogQL:
 
 ## Locust
 
-Load testing del API. UI `http://NODE:30089`.
+Load testing del API. UI `http://<NODE_IP>:30089`.
 
 - `locustfile.py` configurado en ConfigMap (mix 10/30/60 healthz/readyz/predict).
 - 15 municipios DIVIPOLA reales de muestra.
@@ -101,7 +101,7 @@ Load testing del API. UI `http://NODE:30089`.
 
 **Workflow típico**:
 
-1. Abrí Locust UI.
+1. Abrir Locust UI.
 2. "Start swarming" → 100 users, ramp 10/s, host autodetectado.
-3. Mientras corre, abrí Grafana en otra tab → ves RPS, latencia p50/p99, errores.
-4. En Tempo, refresá búsqueda → ves traces nuevos.
+3. En paralelo abrir Grafana en otra pestaña — RPS, latencia p50/p99 y errores en vivo.
+4. En Tempo, refrescar la búsqueda para ver los traces nuevos.
