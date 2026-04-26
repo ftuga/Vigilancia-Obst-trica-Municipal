@@ -18,6 +18,13 @@ spec:
       labels:
         app.kubernetes.io/name: pgadmin
     spec:
+      # ndots:1 evita que postgres-airflow.airflow.svc.cluster.local (5 dots)
+      # resuelva contra el search domain heredado del host WSL (sersocial.org).
+      # Sin esto pgAdmin recibe IP del wildcard interno y connect timeout.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       securityContext:
         runAsNonRoot: true
         runAsUser: 5050
