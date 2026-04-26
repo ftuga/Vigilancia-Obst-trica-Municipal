@@ -47,15 +47,29 @@ spec:
             limits:
               memory: 1Gi
               cpu: 1000m
+          # / hace SSR y fetch al API → primera carga puede pasar 1s.
+          # timeoutSeconds: 1 (default) era muy estricto y mataba el pod en cold start.
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24  # ~2min para warmup
           readinessProbe:
             httpGet:
               path: /
               port: 3001
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /
               port: 3001
             initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
