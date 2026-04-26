@@ -92,6 +92,12 @@ main() {
         "AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}" \
         "MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}"
 
+    # airflow worker sync_minio task lee AWS_* directo del env.
+    apply_secret_literal airflow mlflow-s3 \
+        "AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}" \
+        "AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}" \
+        "MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}"
+
     echo
     echo "Secrets aplicados:"
     for ns in airflow mlflow data apps; do
