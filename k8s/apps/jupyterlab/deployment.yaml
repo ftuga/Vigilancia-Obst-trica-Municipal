@@ -31,15 +31,17 @@ spec:
         - name: jupyter
           image: luisfrontuso10/mme-jupyterlab:20260426-51e574d
           imagePullPolicy: Always
+          # Sin auth: red privada del cluster, acceso vía NodePort en LAN local.
+          args:
+            - "start-notebook.sh"
+            - "--ServerApp.token="
+            - "--ServerApp.password="
+            - "--ServerApp.disable_check_xsrf=True"
+            - "--ServerApp.allow_origin=*"
           ports:
             - name: http
               containerPort: 8888
           env:
-            - name: JUPYTER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: jupyter-creds
-                  key: token
             - name: JUPYTER_ENABLE_LAB
               value: "yes"
             - name: NB_UMASK

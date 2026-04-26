@@ -86,10 +86,9 @@ print_service "frontend-mme" \
     "http://${HOST_IP}:${FRONTEND_NODEPORT:-30602}" \
     ""
 
-jupyter_token=$(secret_value apps jupyter-creds token)
 print_service "JupyterLab" \
-    "http://${HOST_IP}:${JUPYTER_NODEPORT:-30888}/?token=${jupyter_token}" \
-    "token: ${jupyter_token:-<no-secret>}"
+    "http://${HOST_IP}:${JUPYTER_NODEPORT:-30888}" \
+    ""
 
 pgadmin_email=$(secret_value apps pgadmin-creds email)
 pgadmin_pass=$(secret_value apps pgadmin-creds password)
