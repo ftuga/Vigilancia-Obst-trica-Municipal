@@ -533,8 +533,3 @@ Detalle completo: [code/docs/mme/ml-problem-definition.md](code/docs/mme/ml-prob
 - Marco normativo: Resolución 3280/2018 MinSalud (Ruta Materno Perinatal), PAREMM v5, SIRENAGEST.
 - Criterios clínicos OMS/FLASOG de inclusión MME (enfermedad específica, disfunción orgánica, manejo).
 
----
-
-## Licencia
-
-MIT.
