@@ -31,7 +31,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: api
-          image: luisfrontuso10/mme-api-predict:20260426-c41696b
+          image: luisfrontuso10/mme-api-predict:20260426-51e574d
           imagePullPolicy: Always
           ports:
             - name: http
