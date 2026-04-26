@@ -59,6 +59,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: mme-env
+            - secretRef:
+                name: mlflow-auth
           resources:
             requests:
               memory: 512Mi
