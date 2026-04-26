@@ -103,6 +103,10 @@ main() {
         "email=${PGADMIN_DEFAULT_EMAIL:-admin@mme.dev}" \
         "password=${PGADMIN_DEFAULT_PASSWORD:-mme-pgadmin-2026}"
 
+    # JupyterLab token.
+    apply_secret_literal apps jupyter-creds \
+        "token=${JUPYTER_TOKEN:-mme-jupyter-2026}"
+
     # MLflow tracking basic auth — el chart Bitnami autogenera estas creds.
     # Las copiamos del Secret 'mlflow-tracking' (ns mlflow) al ns airflow
     # con keys mapeadas a MLFLOW_TRACKING_USERNAME / MLFLOW_TRACKING_PASSWORD
