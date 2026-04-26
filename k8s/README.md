@@ -173,6 +173,17 @@ Servicios expuestos:
 | MinIO API (S3) | 30900 | endpoint para clientes mc/aws |
 | JupyterLab | 30888 | sin auth (solo dev local) |
 
+### Kubernetes Dashboard
+
+```bash
+bash k8s/scripts/dashboard.sh
+```
+
+Habilita el addon `dashboard` (idempotente), expone el Service como NodePort `30444` e imprime la URL con la IP del nodo + el token de login. El cert es self-signed: el browser pide "Avanzado → Continuar". Variables opcionales:
+
+- `DASHBOARD_NODEPORT` (default `30444`) — cambiar si choca con otro Service.
+- `KUBECTL` (default `microk8s kubectl`).
+
 ## Cuotas de recursos
 
 Política: todo container tiene `requests` y `limits`. Sin excepciones (incluye sidecars, exporters, statsd, gitSync, post-install jobs).
