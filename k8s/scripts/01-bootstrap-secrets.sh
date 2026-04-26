@@ -98,6 +98,11 @@ main() {
         "AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}" \
         "MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}"
 
+    # pgAdmin login + passwords de Postgres para auto-fill (opcional, no-mandatory).
+    apply_secret_literal apps pgadmin-creds \
+        "email=${PGADMIN_DEFAULT_EMAIL:-admin@mme.local}" \
+        "password=${PGADMIN_DEFAULT_PASSWORD:-mme-pgadmin-2026}"
+
     echo
     echo "Secrets aplicados:"
     for ns in airflow mlflow data apps; do

@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: pgadmin
+    app.kubernetes.io/part-of: vigilancia-obstetrica-municipal
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgadmin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgadmin
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5050
+        fsGroup: 5050
+      containers:
+        - name: pgadmin
+          image: dpage/pgadmin4:8.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-creds
+                  key: email
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-creds
+                  key: password
+            - name: PGADMIN_LISTEN_PORT
+              value: "80"
+            - name: PGADMIN_CONFIG_SERVER_MODE
+              value: "True"
+            - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+              value: "False"
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/pgadmin
+            - name: servers
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pgadmin-data
+        - name: servers
+          configMap:
+            name: pgadmin-servers
