@@ -12,7 +12,7 @@ executor: CeleryExecutor
 # Trae el paquete `mme` instalado para que DAGs hagan `from mme.*` sin ImportError.
 # Tag bumpeado por GHA bump-image-tags.yml en cada push a main que toque code/proyecto_01/airflow/.
 defaultAirflowRepository: luisfrontuso10/mme-airflow
-defaultAirflowTag: "20260426-51e574d"
+defaultAirflowTag: "20260426-3820ba0"
 airflowVersion: "2.10.5"
 
 # Postgres externo.
