@@ -86,7 +86,7 @@ default_args = {
 @dag(
     dag_id="2-mme_train_and_promote",
     description="Entrenamiento C3 vulnerabilidad municipal + promoción MLflow Registry",
-    schedule="0 4 * * 1",  # Lunes 04:00 UTC
+    schedule="0 4 * * *",  # diario 04:00 UTC (2h después del DAG 1)
     start_date=pendulum.datetime(2026, 4, 23, tz="UTC"),
     catchup=False,
     max_active_runs=1,

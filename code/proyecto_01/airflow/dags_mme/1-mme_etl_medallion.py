@@ -93,7 +93,7 @@ default_args = {
 @dag(
     dag_id="1-mme_etl_medallion",
     description="Ingesta medallón MME (bronze → silver → gold)",
-    schedule="0 3 * * *",  # diario 03:00 UTC
+    schedule="0 2 * * *",  # diario 02:00 UTC (2h antes del DAG 2 train)
     start_date=pendulum.datetime(2026, 4, 23, tz="UTC"),
     catchup=False,
     max_active_runs=1,
