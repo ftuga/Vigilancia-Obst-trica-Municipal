@@ -309,7 +309,7 @@ Postura: **git es la fuente de verdad operacional**. Cualquier cambio en producc
 
 ## 9. Checklist de hardening pre-producción real
 
-Si este stack se llevara a producción real (PAREMM, INS, MinSalud), los siguientes son requisitos no-negociables:
+Si este stack se llevara a producción real (PAREMM, INS, MinSalud) — fuera del alcance de este ejercicio investigativo —, los siguientes son requisitos no-negociables:
 
 - [ ] TLS en todos los NodePorts via cert-manager + Let's Encrypt prod.
 - [ ] OAuth2 Proxy delante de UIs (Grafana, Airflow, MLflow, ArgoCD).
@@ -322,4 +322,4 @@ Si este stack se llevara a producción real (PAREMM, INS, MinSalud), los siguien
 - [ ] Runbook de incidentes con escalation paths.
 - [ ] DPIA (Data Protection Impact Assessment) bajo Ley 1581 firmada por DPO.
 
-Para el alcance académico actual (tesis), los controles aplicados son **suficientes y proporcionales** al riesgo (cluster privado, datos públicos agregados, sin PII).
+Para el alcance del ejercicio investigativo actual, los controles aplicados son **suficientes y proporcionales** al riesgo (cluster privado, datos públicos agregados, sin PII).

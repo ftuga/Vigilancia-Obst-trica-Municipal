@@ -19,7 +19,7 @@ Decisiones arquitectónicas formalizadas. Cada ADR captura el contexto, las opci
 
 ## ADR-001 — microk8s single-node vs k3d / GKE
 
-**Contexto.** Proyecto de tesis con presupuesto cero, requiere reproducibilidad académica y camino a multi-host eventual. Evaluadores deben poder levantar el stack en su máquina.
+**Contexto.** Ejercicio investigativo con presupuesto cero, requiere reproducibilidad y camino a multi-host eventual. Cualquier persona evaluando el trabajo debe poder levantar el stack en su máquina.
 
 **Opciones evaluadas.**
 

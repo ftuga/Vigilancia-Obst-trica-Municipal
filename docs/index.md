@@ -2,7 +2,7 @@
 
 Sistema MLOps end-to-end sobre **microk8s single-node** con GitOps (ArgoCD) para predecir vulnerabilidad de mortalidad materna a nivel municipal en Colombia.
 
-!!! info "Foco de la tesis"
+!!! info "Foco del ejercicio investigativo"
     El **dominio MME** (mortalidad materna extrema) es el caso de uso. La contribución principal es la **arquitectura MLOps** desplegable, reproducible y observable sobre Kubernetes.
 
 ## Stack desplegado

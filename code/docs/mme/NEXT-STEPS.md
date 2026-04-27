@@ -109,7 +109,7 @@
 
 - [ ] **Pushgateway job cleanup**: TTL automático para jobs muertos (hoy las métricas persisten indefinidamente).
 
-### 🎯 Prioridad 6 — Documentación para tesis/paper
+### 🎯 Prioridad 6 — Documentación para publicación / paper
 
 - [ ] `docs/mme/methodology.md` — redactar sección metodológica formal:
   - Unidad de análisis, split temporal, justificación de Spearman dpto
