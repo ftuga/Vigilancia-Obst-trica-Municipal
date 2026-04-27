@@ -2,8 +2,6 @@
 
 ## Sistema MLOps end-to-end para predicción de vulnerabilidad de mortalidad materna en Colombia
 
-> **Reemplaza `<NODE_IP>` por la IP de tu nodo microk8s** en cualquier URL de este README. No hardcodees IPs en commits.
-
 ### Descripción general
 
 Plataforma MLOps completa que predice el número esperado de casos de **Morbilidad Materna Extrema (MME, evento SIVIGILA 549)** por municipio × semestre en Colombia, usando exclusivamente datos públicos. El sistema integra ingesta multi-fuente, modelado de conteos con offset poblacional, registry versionado, serving online con CI/explicabilidad, y observabilidad full-stack.
