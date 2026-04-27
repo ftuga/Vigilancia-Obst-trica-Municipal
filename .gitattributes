@@ -1,0 +1,4 @@
+code/proyecto_01/jupyterlab/notebook/_legacy_rugpull/** linguist-vendored
+*.ipynb linguist-documentation
+code/reports/** linguist-documentation
+Soportes_visuales/** linguist-vendored
