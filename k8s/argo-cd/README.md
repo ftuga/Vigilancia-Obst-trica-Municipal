@@ -70,8 +70,13 @@ microk8s kubectl get application mme-root -n argocd -o yaml
 ## UI ArgoCD
 
 ```bash
+# Opción A (recomendada): NodePort expuesto por defecto
+# https://<NODE_IP>:30443
+
+# Opción B: port-forward si NodePort no está accesible
 microk8s kubectl port-forward -n argocd svc/argo-cd-argocd-server 8080:80 &
 # Browser → http://localhost:8080
+
 # Password inicial:
 microk8s kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d

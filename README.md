@@ -379,10 +379,11 @@ Vigilancia-Obst-trica-Municipal/
 │   ├── tests/                            pytest suites (unit + integration)
 │   └── docs/mme/                         Documentación académica
 │       ├── ml-problem-definition.md
-│       ├── methodology.md
-│       ├── results.md
-│       ├── limitations.md
-│       └── features-spec-v1.md
+│       ├── model-evaluation.md
+│       ├── features-spec-v1.md
+│       ├── mlops-plan.md
+│       ├── dane-eevv-procedure.md
+│       └── NEXT-STEPS.md
 ├── docs/                                 MkDocs Material → GitHub Pages
 │   ├── index.md
 │   ├── architecture.md

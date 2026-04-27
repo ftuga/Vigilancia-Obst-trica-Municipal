@@ -58,6 +58,5 @@ pyproject.toml          # [project.scripts] entry points + ruff + mypy + pytest
 ## Referencias
 
 - Helix skill: `~/.claude/skills/python-production/SKILL.md`
-- `docs/mme/coding-standards.md`
 - "Architecture Patterns with Python" (cosmicpython.com) — ch. 1-3 packaging
 - PEP 621 packaging metadata

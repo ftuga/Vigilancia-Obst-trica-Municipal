@@ -88,9 +88,9 @@ Esperado tras 2016-2022 ingeridos:
 - El manifest `data/mme/bronze/dane/eevv/_manifest.json` registra `input_sha256` por archivo para trazabilidad.
 - Si DANE re-publica un año con corrección, basta con reemplazar el CSV en staging y rerun — el SHA cambia y queda registrado.
 
-## Si querés probar el pipeline antes de tener data real
+## Probar el pipeline antes de tener data real
 
-`scripts/mme/ingest_dane_eevv_bronze.py` viene con dry-run. Para probar end-to-end con data sintética mínima, generá un CSV con esta cabecera y unas decenas de filas:
+`scripts/mme/ingest_dane_eevv_bronze.py` viene con dry-run. Para probar end-to-end con data sintética mínima, generar un CSV con esta cabecera y unas decenas de filas:
 
 ```csv
 ano,cod_dpto,cod_mpio,edad_madre,n_consul,tipo_parto,peso,t_ges,areanac,seg_social,idpertet
