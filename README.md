@@ -75,6 +75,18 @@ El champion se promueve por gate combinado en MLflow (`new ≥ prev × 0,95 OR n
 
 > **Disclaimer ecological fallacy.** El modelo opera a nivel agregado municipio × semestre. **No predice riesgo individual de una gestante.** Un municipio con alta vulnerabilidad promedio no implica que toda gestante en ese municipio esté en riesgo alto. Es una herramienta de asignación de recursos, no un clasificador clínico.
 
+### Techo metodológico (qué NO hace el sistema)
+
+El sistema sirve para priorización territorial, pero choca con un techo: los datos públicos no alcanzan para más.
+
+- **No puedo predecir casos por municipio con precisión operativa**: el subregistro se aprende como "menos casos" en lugar de "menos notificación".
+- **No puedo identificar gestantes individuales con mayor riesgo** sin caer en falacia ecológica.
+- **Precision@top-50 = 0,24** — útil para ranking pero no para decisión individual.
+
+Para esa granularidad haría falta acceso a datos clínicos individuales (RIPS, historia clínica electrónica, georreferenciación), restringidos por habeas data.
+
+Por eso se posiciona como **soporte para asignación territorial, no como clasificador clínico**. La UI lleva disclaimer explícito de *ecological fallacy*.
+
 Detalle metodológico completo: [code/docs/mme/ml-problem-definition.md](code/docs/mme/ml-problem-definition.md) y [code/docs/mme/model-evaluation.md](code/docs/mme/model-evaluation.md).
 
 ---
