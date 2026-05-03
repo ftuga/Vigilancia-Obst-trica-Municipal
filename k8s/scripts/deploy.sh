@@ -81,8 +81,11 @@ ensure_addons() {
         done
     fi
     if ! echo "$enabled" | grep -q "addons:enabled:.*metallb"; then
-        warn "Habilitando metallb (rango 10.64.140.43-49)..."
-        microk8s enable "metallb:10.64.140.43-10.64.140.49" 2>&1 | tail -3 || true
+        local metallb_range
+        metallb_range=$(grep -E '^METALLB_RANGE=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'")
+        metallb_range=${metallb_range:-192.168.49.200-192.168.49.220}
+        warn "Habilitando metallb (rango ${metallb_range})..."
+        microk8s enable "metallb:${metallb_range}" 2>&1 | tail -3 || true
     fi
     ok "Addons MicroK8s OK"
 }

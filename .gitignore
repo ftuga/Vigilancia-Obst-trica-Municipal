@@ -64,6 +64,5 @@ logs/
 kubeconfig
 helm-cache/
 
-# Helix internals (privacidad)
-.claude/memory/*.jsonl
-.claude/memory/decay-scores.json
+# Helix internals (privacidad) — toda la config local del agente queda fuera del repo
+.claude/

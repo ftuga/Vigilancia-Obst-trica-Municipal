@@ -62,7 +62,7 @@ main() {
     enable_addon ingress
     enable_addon hostpath-storage
     enable_addon helm3
-    enable_addon "metallb:10.64.140.43-10.64.140.49"
+    enable_addon "metallb:${METALLB_RANGE:-192.168.49.200-192.168.49.220}"
     enable_addon registry
     enable_addon observability
     enable_addon argocd
